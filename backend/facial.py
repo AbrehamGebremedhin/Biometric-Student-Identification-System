@@ -13,6 +13,11 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 class FacialRecognition:
     def __init__(self) -> None:
+        """
+        Initialize the FacialRecognition class.
+        Sets up the ResNet152 model with pre-trained weights,
+        defines the preprocessing pipeline, and initializes the face detector.
+        """
         # Initialize ResNet152 model with pre-trained weights
         self.model = resnet152(weights=ResNet152_Weights.IMAGENET1K_V2)
         self.model.eval()
@@ -29,11 +34,31 @@ class FacialRecognition:
         self.face_detector = MTCNN()
 
     def detect_face(self, image: np.ndarray) -> bool:
+        """
+        Detect faces in the given image using MTCNN.
+
+        Args:
+            image (np.ndarray): The image in which to detect faces.
+
+        Returns:
+            bool: True if at least one face is detected, False otherwise.
+        """
         # Detect face in the image using MTCNN
         detections = self.face_detector.detect_faces(image)
         return len(detections) > 0
 
     def extract_features(self, image_path, side: str) -> np.ndarray:
+        """
+        Extract features from the given image using the pre-trained ResNet model.
+
+        Args:
+            image_path (str): The path to the image file.
+            side (str): The side of the face to consider ('front' or other).
+
+        Returns:
+            np.ndarray: The extracted features as a flattened numpy array.
+                        Returns an empty array if extraction fails.
+        """
         try:
             # Open the image from the file path
             image = Image.open(BytesIO(image_path))
@@ -61,6 +86,17 @@ class FacialRecognition:
         return features.numpy().flatten()
 
     def compare_images(self, stored_image_features_list: list[np.ndarray], input_image_path) -> bool:
+        """
+        Compare the input image with a list of stored image features.
+
+        Args:
+            stored_image_features_list (list[np.ndarray]): List of stored image features.
+            input_image_path (str): The path to the input image file.
+
+        Returns:
+            bool: True if the input image matches any of the stored images based on cosine similarity.
+                  Returns a message if no valid features are extracted from the input image.
+        """
         # Extract features for the input image
         input_image_feature = self.extract_features(input_image_path, 'front')
         if input_image_feature.size == 0:
@@ -72,25 +108,3 @@ class FacialRecognition:
         # Compare features with stored images
         for stored_image in stored_image_features_list:
             stored_features = np.array(stored_image['features'])
-            if stored_features.size == 0:
-                continue  # Skip empty feature arrays
-
-            # Compute cosine similarity
-            cosine_similarity = np.dot(stored_features, input_image_feature) / (
-                np.linalg.norm(stored_features) * np.linalg.norm(input_image_feature))
-
-            cosine_similarities.append(cosine_similarity)
-            if stored_image['side'] == 'front':
-                weights.append(3)  # Assign higher weight to the front side
-            else:
-                weights.append(0.02)  # Lower weight for left or right sides
-
-        if not cosine_similarities:
-            return False
-
-        # Compute the weighted average of cosine similarities
-        weighted_average_similarity = np.average(
-            cosine_similarities, weights=weights)
-
-        # Compare the weighted similarity with the threshold
-        return weighted_average_similarity > self.threshold
