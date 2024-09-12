@@ -47,7 +47,7 @@ class ExamList(APIView):
                 exams = exams.filter(EXAM_DATE__lt=today)
 
         if not exams.exists():
-            return Response({"error": "Exam not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"Error": f"{exam_type} Exam for {course_name} not found in term: {course_term} on {exam_date}"}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = ExamSerializer(exams, many=True)
         return Response(serializer.data)
@@ -57,7 +57,7 @@ class ExamList(APIView):
         if exam_date:
             exam_date = datetime.strptime(exam_date, "%Y-%m-%d").date()
             if exam_date < datetime.today().date():
-                return Response({"error": "Exam date cannot be in the past"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"Error": "Exam date cannot be in the past"}, status=status.HTTP_400_BAD_REQUEST)
 
         course = Course.objects.get(pk=request.data.get("COURSE_CODE"))
 

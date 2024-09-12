@@ -18,10 +18,20 @@ class _HomePageState extends State<HomePage> {
   int _selectedIndex = 1;
 
   // Pages list for navigation
-  final List<Widget> _pages = [
-    const CameraPage(), // Camera Page
-    StudentsPage(), // Students Page
-  ];
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      CameraPage(
+          selectedRoom: widget.selectedRoom,
+          selectedSession: widget.selectedSession), // Camera Page
+      StudentsPage(
+          selectedRoom: widget.selectedRoom,
+          selectedSession: widget.selectedSession), // Students Page
+    ];
+  }
 
   void _onTabTapped(int index) {
     setState(() {

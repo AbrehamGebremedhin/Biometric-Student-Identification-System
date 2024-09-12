@@ -14,6 +14,7 @@ import AddExam from './pages/Exam/AddExam';
 import UpdateExam from './pages/Exam/EditExam';
 import Room from './pages/Room/Room';
 import AddRoom from './pages/Room/AddRoom';
+import ExaminerMobile from './pages/Mobile/Mobile';
 
 
 function App() {
@@ -43,6 +44,7 @@ function App() {
             <Route path='/edit-exam/:examId' element={<UpdateExam/>}/>
             <Route path='/room' element={<Room/>}/>
             <Route path='/add-room' element={<AddRoom/>}/>
+            <Route path='/examinerMobile' element={<ExaminerMobile/>}/>
           </Routes>
         </Router>
       </QueryClientProvider>

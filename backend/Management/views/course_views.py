@@ -33,7 +33,7 @@ class CourseList(APIView):
             courses = courses.filter(TERM__icontains=course_term)
 
         if not courses:
-            return Response({"error": "Course not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"Error": f"Course: {course_name} not found in term: {course_term}"}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = CourseSerializer(courses, many=True)
         return Response(serializer.data)

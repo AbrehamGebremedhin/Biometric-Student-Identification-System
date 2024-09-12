@@ -1,4 +1,10 @@
+// ignore_for_file: use_build_context_synchronously
+
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'register_page.dart';
 import 'home.dart';
 
 void main() {
@@ -11,11 +17,83 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Biometric Student Identification System',
+      title: 'Flutter Demo',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const SelectionPage(),
+      home: const SplashScreen(),
+    );
+  }
+}
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  // ignore: library_private_types_in_public_api
+  _SplashScreenState createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  late SharedPreferences prefs;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkUuid();
+  }
+
+  Future<void> _checkUuid() async {
+    prefs = await SharedPreferences.getInstance();
+    String? uuid = prefs.getString('uuid');
+
+    if (uuid != null) {
+      bool isActive = await _checkUuidStatus(uuid);
+      if (isActive) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const SelectionPage()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text(
+                  'Application is not active, Please contact the school adminstration.')),
+        );
+      }
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const RegisterPage()),
+      );
+    }
+  }
+
+  Future<bool> _checkUuidStatus(String uuid) async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse('http://192.168.0.102:8000/api/v1/check/$uuid'),
+          )
+          .timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['ACTIVE'];
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(),
+      ),
     );
   }
 }
@@ -44,6 +122,12 @@ class _SelectionPageState extends State<SelectionPage> {
     "Library"
   ];
   List<String> sessions = ["Morning 09:00", "Midday 11:00", "Afternoon 02:00"];
+
+  Map<String, String> sessionMapping = {
+    "Morning 09:00": "MORNING",
+    "Midday 11:00": "MIDDAY",
+    "Afternoon 02:00": "AFTERNOON"
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -92,13 +176,17 @@ class _SelectionPageState extends State<SelectionPage> {
             ElevatedButton(
               onPressed: selectedRoom != null && selectedSession != null
                   ? () {
-                      // Navigate to HomePage and pass the selected values
+                      // Get the mapped session value
+                      String mappedSession = sessionMapping[selectedSession]!;
+
+                      // Navigate to HomePage and pass the selected room and mapped session
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
                           builder: (context) => HomePage(
                             selectedRoom: selectedRoom!,
-                            selectedSession: selectedSession!,
+                            selectedSession:
+                                mappedSession, // Pass the mapped session here
                           ),
                         ),
                       );

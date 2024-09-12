@@ -1,13 +1,17 @@
-import 'package:camera/camera.dart';
-import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'result_page.dart'; // Import the ResultPage
+import 'package:http/http.dart' as http;
+import 'package:image/image.dart' as img; // Import the image package
+import 'home.dart';
 
 class CameraPage extends StatefulWidget {
-  const CameraPage({super.key});
+  final String selectedRoom;
+  final String selectedSession;
+
+  const CameraPage(
+      {super.key, required this.selectedRoom, required this.selectedSession});
 
   @override
   // ignore: library_private_types_in_public_api
@@ -15,113 +19,141 @@ class CameraPage extends StatefulWidget {
 }
 
 class _CameraPageState extends State<CameraPage> {
-  late CameraController _cameraController;
-  late Future<void> _initializeControllerFuture;
+  File? _image;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _initializeCamera();
+    _pickImage();
   }
 
-  Future<void> _initializeCamera() async {
-    // Request camera permission
-    await Permission.camera.request();
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.camera);
 
-    // Get the list of available cameras
-    final cameras = await availableCameras();
-    final firstCamera = cameras.first;
+    if (pickedFile != null) {
+      setState(() {
+        _image = File(pickedFile.path);
+        _isLoading = true;
+      });
 
-    // Initialize the camera controller
-    _cameraController = CameraController(
-      firstCamera,
-      ResolutionPreset.high,
-    );
+      // Compress the image before sending
+      File? compressedImage = await _compressImage(_image!);
 
-    // Initialize the controller
-    _initializeControllerFuture = _cameraController.initialize();
-    setState(() {});
-  }
-
-  Future<void> _takePicture() async {
-    try {
-      // Ensure the camera is initialized
-      await _initializeControllerFuture;
-
-      // Attempt to take a picture and get the file where it was saved
-      final image = await _cameraController.takePicture();
-
-      // Send the image to the backend
-      final result = await _sendImageToBackend(File(image.path));
-
-      // Display the result in a new screen
-      if (!mounted) return;
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ResultPage(result: result),
-        ),
-      );
-    } catch (e) {
-      // Show the error to the user using a SnackBar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      if (compressedImage != null) {
+        await _uploadImage(compressedImage);
+      }
+    } else {
+      _gotoStudentPage();
     }
   }
 
-  Future<Map<String, dynamic>> _sendImageToBackend(File image) async {
+  Future<File?> _compressImage(File imageFile) async {
+    try {
+      // Read the image from the file
+      final originalImage = img.decodeImage(imageFile.readAsBytesSync());
+
+      if (originalImage == null) return null;
+
+      // Resize and compress the image (adjust width and height as needed)
+      final resizedImage = img.copyResize(originalImage,
+          width: 800); // Resize to a width of 800px (adjust if needed)
+
+      // Save the compressed image to a temporary file
+      final compressedImage = File('${imageFile.path}_compressed.jpg')
+        ..writeAsBytesSync(img.encodeJpg(resizedImage,
+            quality: 85)); // Adjust the quality (85% in this case)
+
+      return compressedImage;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<void> _uploadImage(File image) async {
     final request = http.MultipartRequest(
-      'POST',
-      Uri.parse('https://your-backend-url.com/upload'),
+      'PATCH',
+      Uri.parse(
+          'http://192.168.0.102:8000/api/v1/attendances/?room_no=${widget.selectedRoom}&exam_time=${widget.selectedSession}'),
     );
-    request.files.add(await http.MultipartFile.fromPath('image', image.path));
+    request.files
+        .add(await http.MultipartFile.fromPath('input_image', image.path));
+
     final response = await request.send();
 
-    if (response.statusCode == 200) {
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (response.statusCode == 202) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Attendance taken successfully')),
+      );
+      _gotoStudentPage();
+    } else if (response.statusCode == 404) {
       final responseBody = await response.stream.bytesToString();
-      return json.decode(responseBody);
+      final errorMessage = jsonDecode(responseBody)['Error'];
+      _showErrorDialog(errorMessage);
     } else {
-      throw Exception('Failed to upload image');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Image upload failed')),
+      );
+      _gotoStudentPage();
     }
   }
 
-  @override
-  void dispose() {
-    // Dispose of the controller when the widget is disposed
-    _cameraController.dispose();
-    super.dispose();
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _gotoStudentPage() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (BuildContext context) => HomePage(
+          selectedRoom: widget.selectedRoom,
+          selectedSession: widget.selectedSession,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: FutureBuilder<void>(
-        future: _initializeControllerFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            // If the Future is complete, display the preview
-            return Stack(
-              children: [
-                CameraPreview(_cameraController),
-                Positioned(
-                  bottom: 20,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: FloatingActionButton(
-                      onPressed: _takePicture,
-                      child: const Icon(Icons.camera),
-                    ),
-                  ),
-                ),
-              ],
-            );
-          } else {
-            // Otherwise, display a loading indicator
-            return const Center(child: CircularProgressIndicator());
-          }
-        },
+      appBar: AppBar(
+        title: const Text('Camera Page'),
+      ),
+      body: Center(
+        child: _isLoading
+            ? const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Recognizing...'),
+                ],
+              )
+            : _image == null
+                ? const CircularProgressIndicator()
+                : Image.file(_image!),
       ),
     );
   }

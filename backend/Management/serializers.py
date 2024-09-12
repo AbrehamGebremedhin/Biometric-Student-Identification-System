@@ -37,7 +37,8 @@ class AttendanceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Attendance
-        fields = ['student_id', 'exam_id', 'room_no']
+        fields = ['id', 'student_id', 'exam_id',
+                  'room_no', 'ATTENDANCE_STATUS']
 
 
 class MobileSerializer(serializers.ModelSerializer):

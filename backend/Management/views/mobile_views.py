@@ -12,7 +12,6 @@ class ExaminerList(APIView):
     """
     List all examiners, or add a new examiner.
     """
-    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         name = request.query_params.get("name")
@@ -36,12 +35,17 @@ class ExaminerList(APIView):
             examiners = examiners.filter(ACTIVE=status)
 
         if not examiners.exists():
-            return Response({"error": "Examiner not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"Error": f"Mobile with owner name: {name} with phone number: {phone} not found."}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = MobileSerializer(examiners, many=True)
         return Response(serializer.data)
 
     def post(self, request):
+        data = {
+            'EXAMINER_NAME': request.data.get('EXAMINER_PHONE'),
+            'EXAMINER_PHONE': request.data.get('EXAMINER_PHONE'),
+            'ACTIVE': True
+        }
         serializer = MobileSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -86,16 +90,15 @@ class ExaminerActiveCheck(APIView):
     Check if an examiner's mobile is active.
     """
 
-    def post(self, request):
-        examiner_id = request.data.get("ID")
-        if not examiner_id:
-            return Response({"error": "ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+    def get(self, request, uuid):
+        if not uuid:
+            return Response({"Error": "UIID is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             examiner = ExaminerMobile.objects.get(
-                id=examiner_id)
+                id=uuid)
         except ExaminerMobile.DoesNotExist:
-            return Response({"error": "Examiner not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"Error": f"Mobile application with this UUID: {uuid}  not found"}, status=status.HTTP_404_NOT_FOUND)
 
         is_active = examiner.ACTIVE
-        return Response({"EXAMINER_MOBILE": examiner_id, "ACTIVE": is_active}, status=status.HTTP_200_OK)
+        return Response({"EXAMINER_MOBILE": uuid, "ACTIVE": is_active}, status=status.HTTP_200_OK)
