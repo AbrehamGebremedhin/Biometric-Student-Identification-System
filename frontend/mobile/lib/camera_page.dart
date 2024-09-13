@@ -72,6 +72,10 @@ class _CameraPageState extends State<CameraPage> {
   }
 
   Future<void> _uploadImage(File image) async {
+    setState(() {
+      _isLoading = true;
+    });
+
     final request = http.MultipartRequest(
       'PATCH',
       Uri.parse(
@@ -87,10 +91,29 @@ class _CameraPageState extends State<CameraPage> {
     });
 
     if (response.statusCode == 202) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Attendance taken successfully')),
-      );
-      _gotoStudentPage();
+      final responseBody = await response.stream.bytesToString();
+      final responseData = jsonDecode(responseBody);
+
+      if (responseData['success']) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Attendance taken successfully')),
+        );
+
+        // Delay navigation to ensure the Snackbar is shown
+        await Future.delayed(const Duration(seconds: 2));
+
+        _gotoStudentPage();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Attendance not taken, please try again')),
+        );
+
+        // Delay navigation to ensure the Snackbar is shown
+        await Future.delayed(const Duration(seconds: 2));
+
+        _gotoStudentPage();
+      }
     } else if (response.statusCode == 404) {
       final responseBody = await response.stream.bytesToString();
       final errorMessage = jsonDecode(responseBody)['Error'];
@@ -99,6 +122,10 @@ class _CameraPageState extends State<CameraPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Image upload failed')),
       );
+
+      // Delay navigation to ensure the Snackbar is shown
+      await Future.delayed(const Duration(seconds: 2));
+
       _gotoStudentPage();
     }
   }
@@ -124,15 +151,7 @@ class _CameraPageState extends State<CameraPage> {
   }
 
   void _gotoStudentPage() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (BuildContext context) => HomePage(
-          selectedRoom: widget.selectedRoom,
-          selectedSession: widget.selectedSession,
-        ),
-      ),
-    );
+    Navigator.of(context).pushReplacementNamed('/home');
   }
 
   @override

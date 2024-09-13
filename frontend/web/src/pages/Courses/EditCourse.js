@@ -1,44 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
-import Sidebar from '../../components/SideBar';
 import { useNavigate } from 'react-router-dom';
+import { errorHandler } from '../../utils/errorHandler';
+import { getCookieValue } from '../../utils/getCookieValue';
+import Sidebar from '../../components/SideBar';
 
-const EditCourse = () => {
-  const { courseId } = useParams();
-  const [course, setCourse] = useState({
-    COURSE_CODE: '',
-    COURSE_NAME: '',
-    TERM: ''
-  });
+const EditCourse = ({ courseId }) => {
+  const [course, setCourse] = useState({});
   const navigate = useNavigate();
 
 
-  const getCookieValue = (cookieName) => {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.startsWith(cookieName + '=')) {
-        return cookie.substring(cookieName.length + 1);
-      }
-    }
-    return null; // Cookie not found
-  };
 
   useEffect(() => {
-    // Fetch course data from the backend
-    axios.get(`http://127.0.0.1:8000/api/v1/courses/${courseId}/`,{
-        headers: {
-          'Authorization': `Bearer ${getCookieValue("token")}`
-        }
-        })
-      .then(response => {
-        setCourse(response.data);
-      })
-      .catch(error => {
-        console.error('There was an error fetching the course data!', error);
-      });
-  }, [courseId]);
+    axios.get(`http://127.0.0.1:8000/api/v1/courses/${courseId}/`, {
+      headers: {
+        'Authorization': `Bearer ${getCookieValue("token")}`
+      }
+    })
+    .then(response => {
+      setCourse(response.data);
+    })
+    .catch(error => {
+      const errorMessage = errorHandler(error, navigate);
+      console.error('There was an error fetching the course data!', errorMessage);
+    });
+  }, [courseId, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -50,22 +36,20 @@ const EditCourse = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Send updated course data to the backend using PATCH
     axios.patch(`http://127.0.0.1:8000/api/v1/courses/${courseId}/`, course, {
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getCookieValue("token")}`
-          }
-    }
-        
-    )
-      .then(response => {
-        alert('Course updated successfully!');
-        navigate('/course');
-      })
-      .catch(error => {
-        console.error('There was an error updating the course!', error);
-      });
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getCookieValue("token")}`
+      }
+    })
+    .then(response => {
+      alert('Course updated successfully!');
+      navigate('/course');
+    })
+    .catch(error => {
+      const errorMessage = errorHandler(error, navigate);
+      console.error('There was an error updating the course!', errorMessage);
+    });
   };
 
   return (
@@ -109,12 +93,7 @@ const EditCourse = () => {
                 <option value="WINTER">Winter</option>
               </select>
             </div>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Update Course
-            </button>
+            <button type="submit" className="p-2 bg-blue-500 text-white rounded">Update Course</button>
           </form>
         </div>
       </div>

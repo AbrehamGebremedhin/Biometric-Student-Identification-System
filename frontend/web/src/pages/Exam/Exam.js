@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/SideBar';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { errorHandler } from '../../utils/errorHandler';
+import { getCookieValue } from '../../utils/getCookieValue';
 
 const Exam = () => {
   const [exams, setExams] = useState([]);
@@ -11,35 +13,26 @@ const Exam = () => {
     term: '',
     type: ''
   });
-
-  const getCookieValue = (cookieName) => {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.startsWith(cookieName + '=')) {
-        return cookie.substring(cookieName.length + 1);
-      }
-    }
-    return null; // Cookie not found
-  };
+  const [errorMessage, setErrorMessage] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Fetch exams from the server
     const fetchCourses = async () => {
-        try {
-            const response = await axios.get("http://127.0.0.1:8000/api/v1/exams/", {
-              headers: {
-                'Authorization': `Bearer ${getCookieValue("token")}`
-              }
-            });
-            setExams(response.data);
-          } catch (error) {
-            console.error('Error fetching messages:', error);
+      try {
+        const response = await axios.get("http://127.0.0.1:8000/api/v1/exams/", {
+          headers: {
+            'Authorization': `Bearer ${getCookieValue("token")}`
           }
+        });
+        setExams(response.data);
+      } catch (error) {
+        const errorMessage = errorHandler(error, navigate);
+        setErrorMessage(errorMessage);
+      }
     };
     fetchCourses();
-  }, []);
-
+  }, [navigate]);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -52,28 +45,29 @@ const Exam = () => {
   const handleDelete = (examId) => {
     const confirmed = window.confirm('Are you sure you want to delete this Exam?');
     if (confirmed) {
-        axios.delete(`http://127.0.0.1:8000/api/v1/exams/${examId}/`, {
-            headers: {
-                'Authorization': `Bearer ${getCookieValue("token")}`
-            }
-        })
-        .then(response => {
-            alert('Exam deleted successfully');
-            // Remove the deleted exam from the state
-            setExams(exams.filter(exam => exam.id !== examId));
-        })
-        .catch(error => {
-            alert('Error deleting exam: ' + error.message);
-        });
+      axios.delete(`http://127.0.0.1:8000/api/v1/exams/${examId}/`, {
+        headers: {
+          'Authorization': `Bearer ${getCookieValue("token")}`
+        }
+      })
+      .then(response => {
+        alert('Exam deleted successfully');
+        // Remove the deleted exam from the state
+        setExams(exams.filter(exam => exam.id !== examId));
+      })
+      .catch(error => {
+        const errorMessage = errorHandler(error, navigate);
+        alert('Error deleting exam: ' + errorMessage);
+      });
     }
   };
 
   const filteredExams = exams.filter(exam => {
     return (
-      (filters.examDate === '' || exam.EXAM_DATE.includes(filters.examDate)) &&
-      (filters.name === '' || exam.COURSE_CODE.COURSE_CODE.includes(filters.name)) &&
-      (filters.term === '' || exam.COURSE_CODE.TERM.includes(filters.term)) &&
-      (filters.type === '' || exam.EXAM_TYPE.includes(filters.type))
+      (filters.examDate === '' || exam.EXAM_DATE.toLowerCase().includes(filters.examDate.toLowerCase())) &&
+      (filters.name === '' || exam.course_code.COURSE_NAME.toLowerCase().includes(filters.name.toLowerCase())) &&
+      (filters.term === '' || exam.course_code.TERM.toLowerCase().includes(filters.term.toLowerCase())) &&
+      (filters.type === '' || exam.EXAM_TYPE.toLowerCase().includes(filters.type.toLowerCase()))
     );
   });
 
@@ -130,6 +124,7 @@ const Exam = () => {
                       </tr>
                   ))}
                   </tbody>
+                  {errorMessage && <p className="text-red-500">{errorMessage}</p>}
               </table>
               <br/>
               <Link to={'/add-exam'} type='button' className="mt-4 bg-green-500 text-white px-4 py-2 rounded">Add New Exam</Link>

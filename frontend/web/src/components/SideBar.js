@@ -10,7 +10,7 @@ const Sidebar = () => {
             <Link to={'/'} className="p-4 text-xl font-bold">BSIS</Link>
             <nav className="mt-10">
                 <ul> 
-                    <Link to={''}> <li className="px-4 py-2 hover:bg-gray-300">Attendance</li></Link>
+                    <Link to={'/attendance'}> <li className="px-4 py-2 hover:bg-gray-300">Attendance</li></Link>
                     <Link to={'/course'}><li className="px-4 py-2 hover:bg-gray-300">Courses</li></Link>
                     <Link to={'/exam'}><li className="px-4 py-2 hover:bg-gray-300">Exams</li></Link>
                     <Link to={'/examinerMobile'}><li className="px-4 py-2 hover:bg-gray-300">Mobile Applications</li></Link>

@@ -2,21 +2,15 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/SideBar';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { errorHandler } from '../../utils/errorHandler';
+import { getCookieValue } from '../../utils/getCookieValue';
 
 const Room = () => {
     const [rooms, setRooms] = useState([]);
     const [filter, setFilter] = useState({ roomNo: '', examTime: '' });
-
-    const getCookieValue = (cookieName) => {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-          const cookie = cookies[i].trim();
-          if (cookie.startsWith(cookieName + '=')) {
-            return cookie.substring(cookieName.length + 1);
-          }
-        }
-        return null; // Cookie not found
-      };
+    const [errorMessage, setErrorMessage] = useState("");
+    const navigate = useNavigate();
 
     useEffect(() => {
         // Fetch exams from the server
@@ -29,11 +23,12 @@ const Room = () => {
                 });
                 setRooms(response.data);
               } catch (error) {
-                console.error('Error fetching messages:', error);
+                const errorMsg = errorHandler(error, navigate);
+                setErrorMessage(errorMsg);
               }
         };
         fetchRooms();
-      }, []);
+      }, [navigate]);
 
       const handleFilterChange = (e) => {
         const { name, value } = e.target;
@@ -51,14 +46,29 @@ const Room = () => {
       });
     
 
-    const handleEdit = (room) => {
-        // Implement edit functionality
+    const viewData = async (roomNo, examTime) => {
+        navigate(`/view-room/${roomNo}/${examTime}`);
     };
 
     const handleDelete = (roomId) => {
-        // Implement delete functionality
+        const confirmed = window.confirm('Are you sure you want to delete this room?');
+        if (confirmed) {
+            axios.delete(`http://127.0.0.1:8000/api/v1/rooms/${roomId}/`, {
+                headers: {
+                    'Authorization': `Bearer ${getCookieValue("token")}`
+                }
+            })
+            .then(response => {
+                alert('Room deleted successfully');
+                // Remove the deleted room from the state
+                setRooms(rooms.filter(room => room.id !== roomId));
+            })
+            .catch(error => {
+                const errorMsg = errorHandler(error, navigate);
+                alert('Error deleting room: ' + errorMsg);
+            });
+        }
     };
-
 
     return (
         <div className='flex'>
@@ -101,7 +111,7 @@ const Room = () => {
                                     <td className="py-2 px-4 border-b">{room.STUDENT_LIST.length}</td>
                                     <td className="py-2 px-4 border-b flex justify-center">
                                         <button 
-                                            onClick={() => handleEdit(room)} 
+                                            onClick={() => viewData(room.ROOM_NO, room.EXAM_TIME)} 
                                             className="text-indigo-600 hover:text-indigo-900 mr-4"
                                         >
                                             View data
@@ -116,6 +126,7 @@ const Room = () => {
                                 </tr>
                             ))}
                         </tbody>
+                        {errorMessage && <p className="text-red-500">{errorMessage}</p>}
                     </table>
                     <Link 
                         to={'/add-room'}

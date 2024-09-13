@@ -15,6 +15,8 @@ import UpdateExam from './pages/Exam/EditExam';
 import Room from './pages/Room/Room';
 import AddRoom from './pages/Room/AddRoom';
 import ExaminerMobile from './pages/Mobile/Mobile';
+import ViewRoom from './pages/Room/ViewRoom';
+import AttendanceTable from './pages/Attendance/Attendance';
 
 
 function App() {
@@ -37,7 +39,7 @@ function App() {
             <Route path='/add-course' element={<AddCourse/>}/>
             <Route path='/edit-course/:courseId' element={<EditCourse/>}/>
             <Route path='/student' element={<Student/>}/>
-            <Route path='/new-student' element={<NewStudent/>}/>
+            <Route path='/add-student' element={<NewStudent/>}/>
             <Route path='/edit-student/:id' element={<EditStudent/>}/>
             <Route path='/exam' element={<Exam/>}/>
             <Route path='/add-exam' element={<AddExam/>}/>
@@ -45,6 +47,8 @@ function App() {
             <Route path='/room' element={<Room/>}/>
             <Route path='/add-room' element={<AddRoom/>}/>
             <Route path='/examinerMobile' element={<ExaminerMobile/>}/>
+            <Route path='/view-room/:roomNo/:examTime' element={<ViewRoom/>}/>
+            <Route path='/attendance' element={<AttendanceTable/>}/>
           </Routes>
         </Router>
       </QueryClientProvider>

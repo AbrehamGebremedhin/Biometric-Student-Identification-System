@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/SideBar';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { errorHandler } from '../../utils/errorHandler';
+import { getCookieValue } from '../../utils/getCookieValue';
 
 const ExaminerMobile = () => {
   const [examinerMobiles, setExaminerMobiles] = useState([]);
@@ -9,17 +12,8 @@ const ExaminerMobile = () => {
     examinerPhone: '',
     active: ''
   });
-
-  const getCookieValue = (cookieName) => {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.startsWith(cookieName + '=')) {
-        return cookie.substring(cookieName.length + 1);
-      }
-    }
-    return null; // Cookie not found
-  };
+  const [errorMessage, setErrorMessage] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Fetch examinerMobiles from the server
@@ -32,11 +26,12 @@ const ExaminerMobile = () => {
         });
         setExaminerMobiles(response.data);
       } catch (error) {
-        console.error('Error fetching examinerMobiles:', error);
+        const errorMessage = errorHandler(error, navigate);
+        setErrorMessage(errorMessage);
       }
     };
     fetchExaminerMobiles();
-  }, []);
+  }, [navigate]);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -60,7 +55,8 @@ const ExaminerMobile = () => {
         setExaminerMobiles(examinerMobiles.filter(examinerMobile => examinerMobile.id !== examinerMobileId));
       })
       .catch(error => {
-        alert('Error deleting examinerMobile: ' + error.message);
+        const errorMessage = errorHandler(error, navigate);
+        alert('Error deleting examinerMobile: ' + errorMessage);
       });
     }
   };
@@ -72,6 +68,7 @@ const ExaminerMobile = () => {
       (filters.active === '' || examinerMobile.ACTIVE.toString() === filters.active)
     );
   });
+
 
   const handleToggleActivation = (id, currentStatus) => {
     const newStatus = !currentStatus;
@@ -129,24 +126,25 @@ const ExaminerMobile = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                  {filteredExaminerMobiles.map(examinerMobile => (
-                    <tr key={examinerMobile.id} className="hover:bg-gray-100">
-                      <td className="py-2 px-4 border-b">{examinerMobile.EXAMINER_NAME}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">{examinerMobile.EXAMINER_PHONE}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-block w-2 h-2 rounded-full mr-2 ${examinerMobile.ACTIVE ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                        {examinerMobile.ACTIVE ? 'Active' : 'Inactive'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <button onClick={() => handleToggleActivation(examinerMobile.id, examinerMobile.ACTIVE)} className="text-yellow-600 hover:text-yellow-900 mr-4">
-                          {examinerMobile.ACTIVE ? 'Deactivate' : 'Activate'}
-                        </button>
-                        <button onClick={() => handleDelete(examinerMobile.id)} className="text-red-600 hover:text-red-900">Delete</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
+                  <tbody>
+                    {filteredExaminerMobiles.map(examinerMobile => (
+                      <tr key={examinerMobile.id} className="hover:bg-gray-100">
+                        <td className="py-2 px-4 border-b">{examinerMobile.EXAMINER_NAME}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{examinerMobile.EXAMINER_PHONE}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-block w-2 h-2 rounded-full mr-2 ${examinerMobile.ACTIVE ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                          {examinerMobile.ACTIVE ? 'Active' : 'Inactive'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <button onClick={() => handleToggleActivation(examinerMobile.id, examinerMobile.ACTIVE)} className="text-yellow-600 hover:text-yellow-900 mr-4">
+                            {examinerMobile.ACTIVE ? 'Deactivate' : 'Activate'}
+                          </button>
+                          <button onClick={() => handleDelete(examinerMobile.id)} className="text-red-600 hover:text-red-900">Delete</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                {errorMessage && <p className="text-red-500">{errorMessage}</p>}
                 </table>
             </div>
         </div>

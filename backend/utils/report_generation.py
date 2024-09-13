@@ -43,11 +43,11 @@ class ReportGenerator:
                     doc.add_page_break()
 
                 # Add exam information, course code, and room number
-                add_paragraph(doc, f"\t\t\tExam:\t\t{term} / {exam_type}")
-                add_paragraph(doc, f'\t\t\tCourse:\t\t{course_code}')
-                add_paragraph(doc, f"\t\t\tCourse Name:\t\t{
+                add_paragraph(doc, f"\t\tExam:\t{term} / {exam_type}")
+                add_paragraph(doc, f'\t\tCourse:\t{course_code}')
+                add_paragraph(doc, f"\t\tCourse Name:\t{
                               course_data.COURSE_NAME}")
-                add_paragraph(doc, f"\t\t\tRoom:\t\t{room_no}")
+                add_paragraph(doc, f"\t\tRoom:\t{room_no}")
 
                 # Create or add to the table
                 table = doc.add_table(rows=1, cols=3)
@@ -103,6 +103,9 @@ class ReportGenerator:
                  'Present' if attendance.ATTENDANCE_STATUS else 'Absent']
                 for idx, attendance in enumerate(data, start=1)
             ]
+
+        # Ensure the output directory exists
+        os.makedirs(output_dir, exist_ok=True)
 
         if file_type == 'docx':
             # Create a new document

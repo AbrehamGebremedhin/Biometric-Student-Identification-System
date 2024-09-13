@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import Sidebar from '../../components/SideBar';
 import { useNavigate } from 'react-router-dom';
+import { getCookieValue } from '../../utils/getCookieValue';
+import { errorHandler } from '../../utils/errorHandler';
 
 const NewStudent = () => {
   const [formData, setFormData] = useState({
@@ -16,17 +18,6 @@ const NewStudent = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  const getCookieValue = (cookieName) => {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.startsWith(cookieName + '=')) {
-        return cookie.substring(cookieName.length + 1);
-      }
-    }
-    return null; // Cookie not found
-  };
 
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
@@ -65,19 +56,14 @@ const NewStudent = () => {
       .then(response => response.json())
       .then(data => {
         setLoading(false);
-        if (data.error) {
-          setError(data.error); // Set error message from response
-        } 
-        else {
-          navigate('/student'); // Redirect to the student page
-          setError(''); // Clear any previous errors
-        }
+        navigate('/student');
       })
       .catch((error) => {
         setLoading(false);
-        setError('An error occurred while submitting the form. Please try again.');
+        setError(errorHandler(error, navigate)); // Use custom error handler
       });
   };
+
 
   return (
     <div>
@@ -86,7 +72,6 @@ const NewStudent = () => {
             <div className="container mx-auto p-6">
                 <h1 className="text-3xl font-bold mb-6 text-center">New Student</h1>
                 <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow-md">
-                    {error && <div className="error text-red-500">{error}</div>}
                     <div className="flex flex-col">
                         <label className="mb-2 font-semibold">Student ID:</label>
                         <input
@@ -168,6 +153,7 @@ const NewStudent = () => {
                         {loading ? 'Submitting...' : 'Submit'}
                     </button>
                     {loading && <div className="spinner"></div>}
+                    {error && <p className="text-red-500">{error}</p>}
                 </form>
             </div>
         </div>

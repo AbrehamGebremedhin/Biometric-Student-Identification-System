@@ -1,23 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/SideBar';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { errorHandler } from '../../utils/errorHandler';
+import { getCookieValue } from '../../utils/getCookieValue';
+
 
 const Course = () => {
     const [courses, setCourses] = useState([]);
     const [nameFilter, setNameFilter] = useState('');
     const [termFilter, setTermFilter] = useState('');
-
-    const getCookieValue = (cookieName) => {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-          const cookie = cookies[i].trim();
-          if (cookie.startsWith(cookieName + '=')) {
-            return cookie.substring(cookieName.length + 1);
-          }
-        }
-        return null; // Cookie not found
-      };
+    const [errorMessage, setErrorMessage] = useState("");
+    const navigate = useNavigate();
 
     const handleDelete = (id) => {
         const confirmed = window.confirm('Are you sure you want to delete this course?');
@@ -33,7 +27,8 @@ const Course = () => {
                 setCourses(courses.filter(course => course.id !== id));
             })
             .catch(error => {
-                alert('Error deleting course: ' + error.message);
+                const errorMsg = errorHandler(error, navigate);
+                alert('Error deleting course: ' + errorMsg);
             });
         }
     };
@@ -49,11 +44,13 @@ const Course = () => {
                 });
                 setCourses(response.data);
               } catch (error) {
-                console.error('Error fetching messages:', error);
+                const errorMsg = errorHandler(error, navigate);
+                console.error('Error fetching courses:', errorMsg);
+                setErrorMessage(errorMsg);
               }
         };
         fetchCourses();
-      }, []);
+      }, [navigate]);
 
     const filteredCourses = courses.filter(course => 
         course.COURSE_NAME.toLowerCase().includes(nameFilter.toLowerCase()) &&
@@ -120,6 +117,7 @@ const Course = () => {
                                 </tr>
                             ))}
                         </tbody>
+                        {errorMessage && <p className="text-red-500">{errorMessage}</p>}
                     </table>
                     <Link
                         to="/add-course"

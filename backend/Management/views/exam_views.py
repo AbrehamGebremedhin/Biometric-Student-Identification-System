@@ -47,10 +47,10 @@ class ExamList(APIView):
                 exams = exams.filter(EXAM_DATE__lt=today)
 
         if not exams.exists():
-            return Response({"Error": f"{exam_type} Exam for {course_name} not found in term: {course_term} on {exam_date}"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(data={"Error": f"{exam_type} Exam for {course_name} not found in term: {course_term} on {exam_date}"}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = ExamSerializer(exams, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
         exam_date = request.data.get("EXAM_DATE")
@@ -69,7 +69,7 @@ class ExamList(APIView):
             COURSE_CODE=course
         )
 
-        return Response(exam, status=status.HTTP_201_CREATED)
+        return Response(True, status=status.HTTP_201_CREATED)
 
 
 class ExamDetail(APIView):

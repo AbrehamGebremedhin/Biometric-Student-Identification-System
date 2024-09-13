@@ -107,7 +107,10 @@ class AttendanceList(APIView):
 
                 attendance.update(ATTENDANCE_STATUS=True)
 
-                return Response(True, status=status.HTTP_202_ACCEPTED)
+                return Response(f"success: {True}", status=status.HTTP_202_ACCEPTED)
+
+            if not features:
+                return Response(f"success: {False}", status=status.HTTP_404_NOT_FOUND)
 
             if features == "No valid features extracted from the input image.":
                 return Response({"Error: No face detected in the image, please retake it again."}, status=status.HTTP_400_BAD_REQUEST)
@@ -180,6 +183,7 @@ class NoImageAttendance(APIView):
 
 class GenerateAttendanceReport(APIView):
     """This API endpoint is used to generate attendance reports based on the given criteria."""
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
         criteria = request.query_params.get("criteria")

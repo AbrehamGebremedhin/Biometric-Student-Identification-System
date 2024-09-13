@@ -56,7 +56,7 @@ class _StudentsPageState extends State<StudentsPage> {
     try {
       final response = await http.patch(Uri.parse(attendanceApiUrl));
 
-      if (response.statusCode == 201) {
+      if (response.statusCode == 202) {
         // Attendance marked successfully
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Attendance marked')),

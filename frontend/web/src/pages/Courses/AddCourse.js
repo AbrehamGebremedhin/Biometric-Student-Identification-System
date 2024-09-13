@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import Sidebar from '../../components/SideBar';
 import { useNavigate } from 'react-router-dom';
+import { errorHandler } from '../../utils/errorHandler';
+import { getCookieValue } from '../../utils/getCookieValue';
+
 
 const AddCourse = () => {
   const [courseCode, setCourseCode] = useState('');
@@ -8,17 +11,6 @@ const AddCourse = () => {
   const [term, setTerm] = useState('');
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-
-  const getCookieValue = (cookieName) => {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.startsWith(cookieName + '=')) {
-        return cookie.substring(cookieName.length + 1);
-      }
-    }
-    return null; // Cookie not found
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,16 +29,12 @@ const AddCourse = () => {
         },
         body: JSON.stringify(newCourse)
       });
-
-      if (response.status !== 201) {
-        throw new Error('Network response was not ok');
-      }
-
       await response.json();
       navigate('/course');
       setError(null); // Clear any previous errors
     } catch (error) {
-      setError('Error sending message: ' + error.message);
+      const errorMessage = errorHandler(error, navigate);
+      setError('Error sending message: ' + errorMessage);
     }
   };
 

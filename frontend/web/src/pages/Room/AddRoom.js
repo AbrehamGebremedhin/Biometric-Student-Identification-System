@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/SideBar';
+import { getCookieValue } from '../../utils/getCookieValue';
+import { errorHandler } from '../../utils/errorHandler';
 
 const AddRoom = () => {
   const [csvFile, setCsvFile] = useState(null);
@@ -9,17 +11,6 @@ const AddRoom = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
   
-  const getCookieValue = (cookieName) => {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.startsWith(cookieName + '=')) {
-        return cookie.substring(cookieName.length + 1);
-      }
-    }
-    return null; // Cookie not found
-  };
-
   const handleFileChange = (e) => {
     setCsvFile(e.target.files[0]);
   };
@@ -27,6 +18,7 @@ const AddRoom = () => {
   const handleExamTimeChange = (e) => {
     setExamTime(e.target.value);
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,23 +35,20 @@ const AddRoom = () => {
           },
           responseType: 'blob' // Important to handle binary data
         });
-
+      
         // Create a URL for the blob
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', 'exam_documents.zip'); // Specify the file name
+        link.setAttribute('download', 'room_allocation.zip');
         document.body.appendChild(link);
         link.click();
         link.parentNode.removeChild(link);
-
+      
         navigate('/room');
       } catch (error) {
-        if (error.response && error.response.status === 400) {
-          setErrorMessage(`Error 400: ${error.response.data}`);
-        } else {
-          setErrorMessage('Error uploading file.');
-        }
+        const errorMessage = errorHandler(error, navigate);
+        setErrorMessage(errorMessage);
       }
     }
   };
@@ -84,13 +73,18 @@ const AddRoom = () => {
                 onChange={handleFileChange}
                 className="w-full px-3 py-2 border rounded"
               />
-              <label className="block text-gray-700 mb-2 mt-4">Exam Time:</label>
-              <input
-                type="text"
-                value={examTime}
-                onChange={handleExamTimeChange}
+              <label htmlFor="examTime" className="block text-gray-700 mb-2 mt-4">Exam Time:</label>
+              <select 
+                id="examTime" 
+                name="examTime" 
                 className="w-full px-3 py-2 border rounded"
-              />
+                onChange={handleExamTimeChange}
+              >
+                <option value="">Select Exam Time</option>
+                <option value="MORNING">Morning (9:00 AM)</option>
+                <option value="MIDDAY">Mid-day (11:00 AM)</option>
+                <option value="AFTERNOON">Afternoon (02:00 PM)</option>
+              </select>
               <button type="submit" className="mt-4 bg-blue-500 text-white px-4 py-2 rounded">
                 Submit
               </button>

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/SideBar';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { errorHandler } from '../../utils/errorHandler';
+import { getCookieValue } from '../../utils/getCookieValue';
 
 const AddExam = () => {
   const [courseCode, setCourseCode] = useState();
@@ -12,17 +14,6 @@ const AddExam = () => {
   const [courses, setCourses] = useState([]);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-
-  const getCookieValue = (cookieName) => {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.startsWith(cookieName + '=')) {
-        return cookie.substring(cookieName.length + 1);
-      }
-    }
-    return null; // Cookie not found
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,40 +34,31 @@ const AddExam = () => {
         },
         body: JSON.stringify(examData)
       });
-
-      if (response.status === 401) {
-        navigate('/login');
-      }
-
-      if (response.status !== 201) {
-        throw new Error('Network response was not ok');
-      }
-
-
       await response.json();
       navigate('/exam');
       setError(null); // Clear any previous errors
     } catch (error) {
-      setError('Error sending message: ' + error.message);
+      setError(errorHandler(error, navigate));
     }
   };
 
   useEffect(() => {
     // Fetch courses from the server
     const fetchCourses = async () => {
-        try {
-            const response = await axios.get("http://127.0.0.1:8000/api/v1/courses/", {
-              headers: {
-                'Authorization': `Bearer ${getCookieValue("token")}`
-              }
-            });
-            setCourses(response.data);
-          } catch (error) {
-            console.error('Error fetching messages:', error);
+      try {
+        const response = await axios.get("http://127.0.0.1:8000/api/v1/courses/", {
+          headers: {
+            'Authorization': `Bearer ${getCookieValue("token")}`
           }
+        });
+        setCourses(response.data);
+      } catch (error) {
+        setError(errorHandler(error, navigate));
+      }
     };
+
     fetchCourses();
-  }, []);
+  }, [navigate]);
 
   return (
     <div>

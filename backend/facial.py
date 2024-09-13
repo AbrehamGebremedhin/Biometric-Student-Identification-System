@@ -108,3 +108,27 @@ class FacialRecognition:
         # Compare features with stored images
         for stored_image in stored_image_features_list:
             stored_features = np.array(stored_image['features'])
+
+            # Compute cosine similarity between stored and input features
+            cosine_similarity = np.dot(stored_features, input_image_feature) / (
+                np.linalg.norm(stored_features) *
+                np.linalg.norm(input_image_feature)
+            )
+            cosine_similarities.append(cosine_similarity)
+
+            if stored_image['side'] == 'front':
+                weight = stored_image.get('weight', 3)
+                weights.append(weight)
+            else:
+                weight = stored_image.get('weight', 0.4)
+                weights.append(weight)
+
+        # Normalize weights
+        normalized_weights = np.array(weights) / np.sum(weights)
+
+        # Weighted average of cosine similarities
+        weighted_avg_similarity = np.dot(
+            normalized_weights, cosine_similarities)
+
+        # Return True if similarity exceeds threshold, else False
+        return weighted_avg_similarity >= self.threshold

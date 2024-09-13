@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Sidebar from '../../components/SideBar'; // Assuming you have a utility function to get the cookie value
 import { useNavigate, useParams } from 'react-router-dom';
+import { errorHandler } from '../../utils/errorHandler';
+import { getCookieValue } from '../../utils/getCookieValue';
 
 const EditExam = () => {
   const [exam, setExam] = useState({
@@ -9,19 +11,10 @@ const EditExam = () => {
     EXAM_TIME: '',
     EXAM_DURATION: ''
   });
+  const [errorMessage, setErrorMessage] = useState("");
+
   const navigate = useNavigate();
   const { examId } = useParams();
-
-  const getCookieValue = (cookieName) => {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.startsWith(cookieName + '=')) {
-        return cookie.substring(cookieName.length + 1);
-      }
-    }
-    return null; // Cookie not found
-  };
 
   useEffect(() => {
     // Fetch the exam data from an API or other source and update the state
@@ -38,9 +31,10 @@ const EditExam = () => {
         });
       })
       .catch(error => {
-        console.error('There was an error fetching the exam data!', error);
+        const errorMessage = errorHandler(error, navigate);
+        setErrorMessage(errorMessage);
       });
-  }, [examId]);
+  }, [examId, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -64,7 +58,8 @@ const EditExam = () => {
         navigate('/exam');
       })
       .catch(error => {
-        console.error('There was an error updating the exam!', error);
+        const errorMessage = errorHandler(error, navigate);
+        setErrorMessage(errorMessage);
       });
   };
 
@@ -104,6 +99,7 @@ const EditExam = () => {
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+          {errorMessage && <p className="text-red-500">{errorMessage}</p>}
           <button
             type="submit"
             className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
