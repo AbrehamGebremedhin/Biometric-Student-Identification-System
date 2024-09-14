@@ -1,8 +1,7 @@
 import os
+from fpdf import FPDF
 from docx import Document
 from docx.shared import Pt
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
 from Management.models import Attendance, Course, Student
 
 
@@ -83,7 +82,7 @@ class ReportGenerator:
         elif criteria == 'COURSE_CODE':
             attendances = Attendance.objects.filter(
                 EXAM_ID__COURSE_CODE__COURSE_CODE=value)
-        elif criteria == 'create postman description for the inputs and parameters of all endpoints':
+        elif criteria == 'STUDENT_BATCH':
             attendances = Attendance.objects.filter(
                 STUDENT_ID__STUDENT_BATCH=value)
         else:
@@ -108,7 +107,8 @@ class ReportGenerator:
         os.makedirs(output_dir, exist_ok=True)
 
         if file_type == 'docx':
-            # Create a new document
+            # Same logic for docx generation
+
             doc = Document()
 
             # Add title to the document
@@ -136,38 +136,41 @@ class ReportGenerator:
             doc.save(file_path)
 
         elif file_type == 'pdf':
-            # Create a new PDF
+            # Use fpdf for PDF generation
             file_path = os.path.join(output_dir, f"Attendance_Report_{
                                      criteria}_{value}.pdf")
-            c = canvas.Canvas(file_path, pagesize=letter)
-            width, height = letter
 
-            # Set fonts and draw title
-            c.setFont("Helvetica-Bold", 16)
-            c.drawString(100, height - 50,
-                         f'Attendance Report by {criteria}: {value}')
+            pdf = FPDF()
+            pdf.set_auto_page_break(auto=True, margin=15)
+            pdf.add_page()
 
-            # Set headers for the table
-            y_position = height - 100
-            c.setFont("Helvetica-Bold", 12)
+            # Set fonts and title
+            pdf.set_font("Arial", 'B', 16)
+            pdf.cell(200, 10, f'Attendance Report for: {
+                     value}', ln=True, align='C')
+
+            # Add a header row with adjusted column widths
+            pdf.set_font("Arial", 'B', 8)
+
+            # Adjust the column widths: No. is slimmer, Name has more space
+            # Custom widths for No., Name, Course Code, Room No., Attendance Status
+            col_widths = [20, 90, 20, 20, 30]
+
+            headers = ['No.', 'Student Name', 'Course Code',
+                       'Room No.', 'Attendance Status']
             for i, header in enumerate(headers):
-                c.drawString(50 + i * 100, y_position, header)
+                pdf.cell(col_widths[i], 8, header, 1, 0, 'C')
+            pdf.ln()
 
-            # Populate the table with attendance data
-            y_position -= 20
-            c.setFont("Helvetica", 12)
+            # Populate the table with attendance data and adjusted column widths
+            pdf.set_font("Arial", '', 12)
             for row_data in populate_data(attendances):
                 for i, cell_text in enumerate(row_data):
-                    c.drawString(50 + i * 100, y_position, cell_text)
-                y_position -= 20
-                # Start a new page if we reach the bottom
-                if y_position < 50:
-                    c.showPage()
-                    c.setFont("Helvetica", 12)  # Reset font for the new page
-                    y_position = height - 50
+                    pdf.cell(col_widths[i], 10, cell_text, 1)
+                pdf.ln()
 
             # Save the PDF
-            c.save()
+            pdf.output(file_path)
 
         else:
             raise ValueError("Invalid file type. Choose 'docx' or 'pdf'.")

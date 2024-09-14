@@ -5,7 +5,8 @@ import torchvision.transforms as transforms
 from PIL import Image
 from io import BytesIO
 from mtcnn import MTCNN
-from torchvision.models import resnet152, ResNet152_Weights
+# Use FaceNet for better facial embeddings
+from facenet_pytorch import InceptionResnetV1
 
 # Suppress TensorFlow logging
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
@@ -15,45 +16,51 @@ class FacialRecognition:
     def __init__(self) -> None:
         """
         Initialize the FacialRecognition class.
-        Sets up the ResNet152 model with pre-trained weights,
-        defines the preprocessing pipeline, and initializes the face detector.
+        Sets up the FaceNet model with pre-trained weights,
+        defines the preprocessing pipeline, and initializes the face detector (MTCNN).
         """
-        # Initialize ResNet152 model with pre-trained weights
-        self.model = resnet152(weights=ResNet152_Weights.IMAGENET1K_V2)
-        self.model.eval()
+        # Initialize FaceNet model for facial embeddings
+        self.model = InceptionResnetV1(pretrained='vggface2').eval()
 
         # Define the preprocessing pipeline
         self.preprocess = transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
+            transforms.Resize(160),  # Resizing to 160x160 for FaceNet
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                 std=[0.229, 0.224, 0.225]),
+            transforms.Normalize(mean=[0.5, 0.5, 0.5],
+                                 std=[0.5, 0.5, 0.5]),
         ])
         self.threshold = 0.75
         self.face_detector = MTCNN()
 
-    def detect_face(self, image: np.ndarray) -> bool:
+    def detect_and_align_face(self, image: np.ndarray) -> np.ndarray:
         """
-        Detect faces in the given image using MTCNN.
+        Detect and align faces in the given image using MTCNN.
 
         Args:
-            image (np.ndarray): The image in which to detect faces.
+            image (np.ndarray): The image in which to detect and align faces.
 
         Returns:
-            bool: True if at least one face is detected, False otherwise.
+            np.ndarray: The aligned face as a numpy array.
         """
         # Detect face in the image using MTCNN
         detections = self.face_detector.detect_faces(image)
-        return len(detections) > 0
 
-    def extract_features(self, image_path, side: str) -> np.ndarray:
+        if detections is None or len(detections) == 0:
+            return None
+
+        # Extract the bounding box of the first detected face
+        x, y, width, height = detections[0]['box']
+        aligned_face = image[y:y + height, x:x + width]
+
+        return aligned_face
+
+    def extract_features(self, image_path: str, side: str) -> np.ndarray:
         """
-        Extract features from the given image using the pre-trained ResNet model.
+        Extract features from the given image using the FaceNet model.
 
         Args:
             image_path (str): The path to the image file.
-            side (str): The side of the face to consider ('front' or other).
+            side (str): Indicates the side of the face ('front', 'right' or 'left').
 
         Returns:
             np.ndarray: The extracted features as a flattened numpy array.
@@ -68,24 +75,32 @@ class FacialRecognition:
         image = image.convert('RGB')
         image_array = np.array(image)
 
+        # Only detect and align the face if the side is 'front'
         if side == 'front':
-            if not self.detect_face(image_array):
+            aligned_face = self.detect_and_align_face(image_array)
+            if aligned_face is None:
                 return np.array([])
 
-        # Preprocess the image
-        image_tensor = self.preprocess(image)
-        image_tensor = image_tensor.unsqueeze(0)
+            # Convert the aligned face (numpy array) back to PIL image
+            aligned_face_pil = Image.fromarray(aligned_face)
+        else:
+            # If the side is not 'front', use the original image without alignment
+            aligned_face_pil = image
+
+        # Preprocess the aligned face or original image
+        face_tensor = self.preprocess(aligned_face_pil)
+        face_tensor = face_tensor.unsqueeze(0)
 
         try:
-            # Extract features using the pre-trained ResNet model
+            # Extract features using FaceNet
             with torch.no_grad():
-                features = self.model(image_tensor)
+                features = self.model(face_tensor)
         except Exception as e:
             return np.array([])
 
         return features.numpy().flatten()
 
-    def compare_images(self, stored_image_features_list: list[np.ndarray], input_image_path) -> bool:
+    def compare_images(self, stored_image_features_list: list[np.ndarray], input_image_path: str) -> bool:
         """
         Compare the input image with a list of stored image features.
 
@@ -98,7 +113,8 @@ class FacialRecognition:
                   Returns a message if no valid features are extracted from the input image.
         """
         # Extract features for the input image
-        input_image_feature = self.extract_features(input_image_path, 'front')
+        input_image_feature = self.extract_features(
+            input_image_path, side='front')
         if input_image_feature.size == 0:
             return "No valid features extracted from the input image."
 

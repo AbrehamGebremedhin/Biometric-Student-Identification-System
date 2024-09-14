@@ -1,4 +1,5 @@
 import json
+import os
 from django.shortcuts import get_list_or_404
 import pandas as pd
 from datetime import datetime
@@ -191,10 +192,11 @@ class GenerateAttendanceReport(APIView):
         file_type = request.query_params.get("file_type")
 
         report = ReportGenerator()
-        file_path = report.generate_report(criteria, value, file_type)
+        file_path = report.generate_report(
+            criteria, value, file_type=file_type)
 
         # Return the file as a downloadable response
         response = FileResponse(open(file_path, 'rb'), as_attachment=True)
         response['Content-Disposition'] = f'attachment; filename="{
-            file_path.split("/")[-1]}"'
+            os.path.basename(file_path)}"'
         return response
