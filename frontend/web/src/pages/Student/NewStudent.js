@@ -15,6 +15,7 @@ const NewStudent = () => {
     right_image: null,
     front_image: null,
   });
+  const [errors, setErrors] = useState({});
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -34,8 +35,24 @@ const NewStudent = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const validateInputs = () => {
+    const newErrors = {};
+    if (!formData.STUDENT_ID) newErrors.STUDENT_ID = 'Student ID is required.';
+    if (!formData.firstName) newErrors.firstName = 'First name is required.';
+    if (!formData.fatherName) newErrors.fatherName = 'Father\'s name is required.';
+    if (!formData.grandfatherName) newErrors.grandfatherName = 'Grandfather\'s name is required.';
+    if (!formData.STUDENT_BATCH) newErrors.STUDENT_BATCH = 'Student batch is required.';
+    return newErrors;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    const newErrors = validateInputs();
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     setLoading(true);
     const data = new FormData();
     const STUDENT_NAME = `${formData.firstName} ${formData.fatherName} ${formData.grandfatherName}`;
@@ -46,117 +63,158 @@ const NewStudent = () => {
     data.append('right_image', formData.right_image);
     data.append('front_image', formData.front_image);
 
-    fetch('http://127.0.0.1:8000/api/v1/students/', {
+    try {
+      const response = await fetch("http://127.0.0.1:8000/api/v1/students/", {
+        method: "POST",
         headers: {
-            'Authorization': `Bearer ${getCookieValue('token')}` // Add this if you have a token
+          'Authorization': `Bearer ${getCookieValue('token')}`
         },
-      method: 'POST',
-      body: data,
-    })
-      .then(response => response.json())
-      .then(data => {
-        setLoading(false);
-        navigate('/student');
-      })
-      .catch((error) => {
-        setLoading(false);
-        setError(errorHandler(error, navigate)); // Use custom error handler
+        body: data
       });
-  };
 
+      if (!response.ok) {
+        const res = await response.json();
+        setError(res.Error || 'An error occurred');
+        setLoading(false);
+        return;
+      }
+
+      await response.json();
+      navigate('/students');
+      setError(''); // Clear any previous errors
+      setLoading(false);
+    } catch (error) {
+      setError(errorHandler(error, navigate));
+      setLoading(false);
+    }
+  };
 
   return (
     <div>
-        <Sidebar />
-        <div className="flex-1 p-6 ml-64">
-            <div className="container mx-auto p-6">
-                <h1 className="text-3xl font-bold mb-6 text-center">New Student</h1>
-                <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow-md">
-                    <div className="flex flex-col">
-                        <label className="mb-2 font-semibold">Student ID:</label>
-                        <input
-                            type="text"
-                            name="STUDENT_ID"
-                            value={formData.STUDENT_ID}
-                            onChange={handleChange}
-                            className="border p-2 rounded"
-                        />
-                    </div>
-                    <div className="flex flex-col">
-                        <label className="mb-2 font-semibold">First Name:</label>
-                        <input
-                            type="text"
-                            name="firstName"
-                            value={formData.firstName}
-                            onChange={handleChange}
-                            className="border p-2 rounded"
-                        />
-                    </div>
-                    <div className="flex flex-col">
-                        <label className="mb-2 font-semibold">Father Name:</label>
-                        <input
-                            type="text"
-                            name="fatherName"
-                            value={formData.fatherName}
-                            onChange={handleChange}
-                            className="border p-2 rounded"
-                        />
-                    </div>
-                    <div className="flex flex-col">
-                        <label className="mb-2 font-semibold">Grandfather Name:</label>
-                        <input
-                            type="text"
-                            name="grandfatherName"
-                            value={formData.grandfatherName}
-                            onChange={handleChange}
-                            className="border p-2 rounded"
-                        />
-                    </div>
-                    <div className="flex flex-col">
-                        <label className="mb-2 font-semibold">Student Batch:</label>
-                        <input
-                            type="text"
-                            name="STUDENT_BATCH"
-                            value={formData.STUDENT_BATCH}
-                            onChange={handleChange}
-                            className="border p-2 rounded"
-                        />
-                    </div>
-                    <div className="flex flex-col">
-                        <label className="mb-2 font-semibold">Left Image:</label>
-                        <input
-                            type="file"
-                            name="left_image"
-                            onChange={handleChange}
-                            className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                    </div>
-                    <div className="flex flex-col">
-                        <label className="mb-2 font-semibold">Right Image:</label>
-                        <input
-                            type="file"
-                            name="right_image"
-                            onChange={handleChange}
-                            className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                    </div>
-                    <div className="flex flex-col">
-                        <label className="mb-2 font-semibold">Front Image:</label>
-                        <input
-                            type="file"
-                            name="front_image"
-                            onChange={handleChange}
-                            className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                    </div>
-                    <button type="submit" className="bg-blue-500 text-white p-2 rounded" disabled={loading}>
-                        {loading ? 'Submitting...' : 'Submit'}
-                    </button>
-                    {loading && <div className="spinner"></div>}
-                    {error && <p className="text-red-500">{error}</p>}
-                </form>
+      <Sidebar />
+      <div className="flex-1 p-6 ml-64">
+        <div className="container mx-auto">
+          <h1 className="text-3xl font-bold mb-6">Add New Student</h1>
+          <form onSubmit={handleSubmit} className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+            {error && <div className="mb-4 text-red-500">{error}</div>}
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="STUDENT_ID">
+                Student ID:
+              </label>
+              <input
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                type="text"
+                id="STUDENT_ID"
+                name="STUDENT_ID"
+                value={formData.STUDENT_ID}
+                onChange={handleChange}
+              />
+              {errors.STUDENT_ID && <p className="text-red-500 text-xs italic">{errors.STUDENT_ID}</p>}
             </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="firstName">
+                First Name:
+              </label>
+              <input
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                type="text"
+                id="firstName"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+              />
+              {errors.firstName && <p className="text-red-500 text-xs italic">{errors.firstName}</p>}
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="fatherName">
+                Father's Name:
+              </label>
+              <input
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                type="text"
+                id="fatherName"
+                name="fatherName"
+                value={formData.fatherName}
+                onChange={handleChange}
+              />
+              {errors.fatherName && <p className="text-red-500 text-xs italic">{errors.fatherName}</p>}
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="grandfatherName">
+                Grandfather's Name:
+              </label>
+              <input
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                type="text"
+                id="grandfatherName"
+                name="grandfatherName"
+                value={formData.grandfatherName}
+                onChange={handleChange}
+              />
+              {errors.grandfatherName && <p className="text-red-500 text-xs italic">{errors.grandfatherName}</p>}
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="STUDENT_BATCH">
+                Student Batch:
+              </label>
+              <input
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                type="text"
+                id="STUDENT_BATCH"
+                name="STUDENT_BATCH"
+                value={formData.STUDENT_BATCH}
+                onChange={handleChange}
+              />
+              {errors.STUDENT_BATCH && <p className="text-red-500 text-xs italic">{errors.STUDENT_BATCH}</p>}
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="left_image">
+                Left Image:
+              </label>
+              <input
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                type="file"
+                id="left_image"
+                name="left_image"
+                onChange={handleChange}
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="right_image">
+                Right Image:
+              </label>
+              <input
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                type="file"
+                id="right_image"
+                name="right_image"
+                onChange={handleChange}
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="front_image">
+                Front Image:
+              </label>
+              <input
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                type="file"
+                id="front_image"
+                name="front_image"
+                onChange={handleChange}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <button
+                type="submit"
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                disabled={loading}
+              >
+                {loading ? 'Submitting...' : 'Add Student'}
+              </button>
+            </div>
+          </form>
         </div>
+      </div>
     </div>
   );
 };

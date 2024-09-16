@@ -6,7 +6,7 @@ import { errorHandler } from '../../utils/errorHandler';
 import { getCookieValue } from '../../utils/getCookieValue';
 
 const AddExam = () => {
-  const [courseCode, setCourseCode] = useState();
+  const [courseCode, setCourseCode] = useState('');
   const [examDate, setExamDate] = useState('');
   const [examTime, setExamTime] = useState('');
   const [examDuration, setExamDuration] = useState('');
@@ -23,7 +23,7 @@ const AddExam = () => {
       EXAM_TIME: examTime,
       EXAM_DURATION: examDuration,
       EXAM_TYPE: examType
-    }
+    };
     console.log(examData);
     try {
       const response = await fetch("http://127.0.0.1:8000/api/v1/exams/", {
@@ -34,6 +34,13 @@ const AddExam = () => {
         },
         body: JSON.stringify(examData)
       });
+
+      if (!response.ok) {
+        const res = await response.json();
+        setError(res.Error || 'An error occurred');
+        return;
+      }
+
       await response.json();
       navigate('/exam');
       setError(null); // Clear any previous errors
@@ -48,7 +55,7 @@ const AddExam = () => {
       try {
         const response = await axios.get("http://127.0.0.1:8000/api/v1/courses/", {
           headers: {
-            'Authorization': `Bearer ${getCookieValue("token")}`
+            'Authorization': `Bearer ${getCookieValue('token')}`
           }
         });
         setCourses(response.data);
@@ -66,6 +73,8 @@ const AddExam = () => {
       <div className='flex-1 p-6 ml-64'>
         <div className="container mx-auto">
           <form onSubmit={handleSubmit} className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+            {error && <div className="error">{error}</div>}
+
             <h2 className="text-2xl font-bold mb-6 text-center">Add Exam</h2>
             <div className="mb-4">
               <label className="block text-gray-700">Course Code:</label>
@@ -88,7 +97,7 @@ const AddExam = () => {
               <input
                 type="date"
                 name="examDate"
-                onChange={(e)=>setExamDate(e.target.value)}
+                onChange={(e) => setExamDate(e.target.value)}
                 required
                 className="mt-1 p-2 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -98,7 +107,7 @@ const AddExam = () => {
               <input
                 type="time"
                 name="examTime"
-                onChange={(e)=>setExamTime(e.target.value)}
+                onChange={(e) => setExamTime(e.target.value)}
                 required
                 className="mt-1 p-2 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -108,7 +117,7 @@ const AddExam = () => {
               <input
                 type="number"
                 name="examDuration"
-                onChange={(e)=>setExamDuration(e.target.value)}
+                onChange={(e) => setExamDuration(e.target.value)}
                 required
                 className="mt-1 p-2 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -117,7 +126,7 @@ const AddExam = () => {
               <label className="block text-gray-700">Exam Type:</label>
               <select
                 name="examType"
-                onChange={(e)=>setExamType(e.target.value)}
+                onChange={(e) => setExamType(e.target.value)}
                 required
                 className="mt-1 p-2 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
