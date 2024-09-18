@@ -1,11 +1,15 @@
 from datetime import datetime
-from Management.models import ExaminerMobile
-from Management.serializers import MobileSerializer
+import json
+from Management.models import Attendance, ExaminerMobile, Student
+from Management.serializers import AttendanceSerializer, MobileSerializer, StudentSerializer
 from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from facial import FacialRecognition
+
+facial = FacialRecognition()
 
 
 class ExaminerList(APIView):
@@ -35,7 +39,7 @@ class ExaminerList(APIView):
             examiners = examiners.filter(ACTIVE=status)
 
         if not examiners.exists():
-            return Response({"Error": f"Mobile with owner name: {name} with phone number: {phone} not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(data={"Error": f"Mobile with owner name: {name} with phone number: {phone} not found."}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = MobileSerializer(examiners, many=True)
         return Response(serializer.data)
@@ -46,7 +50,7 @@ class ExaminerList(APIView):
             'EXAMINER_PHONE': request.data.get('EXAMINER_PHONE'),
             'ACTIVE': True
         }
-        serializer = MobileSerializer(data=request.data)
+        serializer = MobileSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -92,13 +96,13 @@ class ExaminerActiveCheck(APIView):
 
     def get(self, request, uuid):
         if not uuid:
-            return Response({"Error": "UIID is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(data={"Error": "UIID is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             examiner = ExaminerMobile.objects.get(
                 id=uuid)
         except ExaminerMobile.DoesNotExist:
-            return Response({"Error": f"Mobile application with this UUID: {uuid}  not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(data={"Error": f"Mobile application with this UUID: {uuid}  not found"}, status=status.HTTP_404_NOT_FOUND)
 
         is_active = examiner.ACTIVE
         return Response({"EXAMINER_MOBILE": uuid, "ACTIVE": is_active}, status=status.HTTP_200_OK)

@@ -57,7 +57,7 @@ class ExamList(APIView):
         if exam_date:
             exam_date = datetime.strptime(exam_date, "%Y-%m-%d").date()
             if exam_date < datetime.today().date():
-                return Response({"Error": "Exam date cannot be in the past"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(data={"Error": "Exam date cannot be in the past"}, status=status.HTTP_400_BAD_REQUEST)
 
         course = Course.objects.get(pk=request.data.get("COURSE_CODE"))
 

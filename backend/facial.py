@@ -29,7 +29,7 @@ class FacialRecognition:
             transforms.Normalize(mean=[0.5, 0.5, 0.5],
                                  std=[0.5, 0.5, 0.5]),
         ])
-        self.threshold = 0.75
+        self.threshold = 0.70
         self.face_detector = MTCNN()
 
     def detect_and_align_face(self, image: np.ndarray) -> np.ndarray:

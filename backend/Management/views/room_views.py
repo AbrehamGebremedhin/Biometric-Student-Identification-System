@@ -31,7 +31,7 @@ class RoomList(APIView):
             rooms = rooms.filter(EXAM_TIME__icontains=exam_time)
 
         if not rooms.exists():
-            return Response({"Error": f"Room {room_no} not found at {exam_time}"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(data={"Error": f"Room {room_no} not found at {exam_time}"}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = RoomSerializer(rooms, many=True)
         return Response(serializer.data)
@@ -43,7 +43,7 @@ class RoomList(APIView):
         elif file.name.endswith('.xlsx') or file.name.endswith('.xls'):
             data = pd.read_excel(file)
         else:
-            return Response({"Error": f"Unsupported file format"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(data={"Error": f"Unsupported file format"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Required columns
         required_columns = {'room_no', 'student_id', 'course_code', 'term'}
@@ -51,7 +51,7 @@ class RoomList(APIView):
         # Check if all required columns are present
         if not required_columns.issubset(data.columns):
             missing_columns = required_columns - set(data.columns)
-            return Response({"Error": f"Missing columns: {', '.join(missing_columns)}"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(data={"Error": f"Missing columns: {', '.join(missing_columns)}"}, status=status.HTTP_400_BAD_REQUEST)
 
         term = data['term'].iloc[0] if 'term' in data.columns else 'Unknown Term'
         unique_room_nos = data['room_no'].unique()
@@ -66,11 +66,11 @@ class RoomList(APIView):
                 course = Course.objects.filter(
                     COURSE_CODE=course_code, TERM=term).first()
                 if not course:
-                    return Response({"Error": f"Course {course_code} in {term} does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response(data={"Error": f"Course {course_code} in {term} does not exist"}, status=status.HTTP_400_BAD_REQUEST)
                 exam = Exam.objects.filter(COURSE_CODE=course).first()
 
                 if not exam:
-                    return Response({"Error": f"Exam {course_code} in {term} does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response(data={"Error": f"Exam {course_code} in {term} does not exist"}, status=status.HTTP_400_BAD_REQUEST)
 
                 exam_type = exam.EXAM_TYPE
 
@@ -81,7 +81,7 @@ class RoomList(APIView):
                     try:
                         Student.objects.get(STUDENT_ID=student_id)
                     except Student.DoesNotExist:
-                        return Response({"Error": f"Student with the ID: {student_id} does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+                        return Response(data={"Error": f"Student with the ID: {student_id} does not exist"}, status=status.HTTP_400_BAD_REQUEST)
 
                 students.append({
                     "course_code": course_code,

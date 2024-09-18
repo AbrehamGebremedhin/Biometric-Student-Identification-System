@@ -1,12 +1,12 @@
 import json
 import numpy as np
-from Management.models import Student
-from Management.serializers import StudentSerializer
+from Management.models import Student, Attendance
+from Management.serializers import StudentSerializer, AttendanceSerializer
 from django.http import Http404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from facial import FacialRecognition
 
 facial = FacialRecognition()
@@ -37,7 +37,7 @@ class StudentList(APIView):
             students = students.filter(STUDENT_BATCH__icontains=student_batch)
 
         if not students.exists():
-            return Response({"Error": f"Student with the name: {student_name} in batch {student_batch} not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(data={"Error": f"Student with the name: {student_name} in batch {student_batch} not found"}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = StudentSerializer(students, many=True)
         return Response(serializer.data)
@@ -50,7 +50,7 @@ class StudentList(APIView):
                 features = facial.extract_features(
                     image_file.read(), side=side)
                 if isinstance(features, str) and features == "No face detected":
-                    return Response({"Error": f"No face detected in the {side} image"}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response(data={"Error": f"No face detected in the {side} image"}, status=status.HTTP_400_BAD_REQUEST)
 
                 # Convert NumPy array to list if necessary
                 if isinstance(features, np.ndarray):
@@ -58,12 +58,12 @@ class StudentList(APIView):
 
                 extracted_features.append({"side": side, "features": features})
             else:
-                return Response({"Error": f"{side} image not found"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(data={"Error": f"{side} image not found"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             extracted_features_json = json.dumps(extracted_features)
         except (TypeError, ValueError) as e:
-            return Response({"Error": "Invalid features data"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(data={"Error": "Invalid features data"}, status=status.HTTP_400_BAD_REQUEST)
 
         data = {
             "STUDENT_ID": request.data.get("STUDENT_ID"),
@@ -111,7 +111,7 @@ class StudentDetail(APIView):
                     features = facial.extract_features(
                         image_file.read(), side=side)
                     if isinstance(features, str) and features == "No face detected":
-                        return Response({"Error": f"No face detected in the {side} image"}, status=status.HTTP_400_BAD_REQUEST)
+                        return Response(data={"Error": f"No face detected in the {side} image"}, status=status.HTTP_400_BAD_REQUEST)
 
                     # Convert NumPy array to list if necessary
                     if isinstance(features, np.ndarray):
@@ -124,7 +124,7 @@ class StudentDetail(APIView):
                     student.EXTRACTED_FEATURES = json.dumps(extracted_features)
 
                 else:
-                    return Response({"Error": f"{side} image not found"}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response(data={"Error": f"{side} image not found"}, status=status.HTTP_400_BAD_REQUEST)
         serializer = StudentSerializer(
             student, data=request.data, partial=True)
         if serializer.is_valid():
@@ -136,27 +136,3 @@ class StudentDetail(APIView):
         student = self.get_object(id)
         student.delete()
         return Response(data={True}, status=status.HTTP_204_NO_CONTENT)
-
-
-class CheckStudent(APIView):
-    def get(self, request):
-        input_image = request.query_params.get("image")
-
-        if not input_image:
-            return Response({"Error": "Image not found"}, status=status.HTTP_404_NOT_FOUND)
-
-        # Filter students based on some criteria if possible
-        students = Student.objects.all()
-
-        for student in students:
-            student_data = json.loads(StudentSerializer(
-                student).data["STUDENT_EXTRACTED_FEATURES"])
-
-            is_student = facial.compare_images(
-                stored_image_features_list=student_data, input_image_features=input_image.read())
-
-            if is_student:
-                serializer = StudentSerializer(student)
-                return Response(serializer.data)
-
-        return Response({"Error": "Student not found"}, status=status.HTTP_404_NOT_FOUND)

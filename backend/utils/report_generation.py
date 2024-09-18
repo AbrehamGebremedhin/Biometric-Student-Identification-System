@@ -6,11 +6,37 @@ from Management.models import Attendance, Course, Student
 
 
 class ReportGenerator:
+    """
+    A class to generate reports in DOCX and PDF formats based on attendance data.
+
+    Attributes:
+        report_data (str): The name of the report data.
+        output_dir (str): The name of the output directory.
+    """
+
     def __init__(self, report_data_name='report', output_dir_name='output'):
+        """
+        Initializes the ReportGenerator with the given report data name and output directory name.
+
+        Args:
+            report_data_name (str): The name of the report data.
+            output_dir_name (str): The name of the output directory.
+        """
         self.report_data = report_data_name
         self.output_dir = output_dir_name
 
     def create_word_files(self, room_data, term, exam_type):
+        """
+        Creates Word documents for each course based on the provided room data, term, and exam type.
+
+        Args:
+            room_data (list): A list of dictionaries containing room and student data.
+            term (str): The term for which the report is generated.
+            exam_type (str): The type of exam.
+
+        Returns:
+            list: A list of file paths to the generated Word documents.
+        """
         course_docs = {}
         output_dir = self.output_dir
         file_paths = []
@@ -19,7 +45,15 @@ class ReportGenerator:
         os.makedirs(output_dir, exist_ok=True)
 
         def add_paragraph(doc, text, bold=True, font_size=12):
-            """ Helper function to add a formatted paragraph to the document. """
+            """ 
+            Helper function to add a formatted paragraph to the document. 
+
+            Args:
+                doc (Document): The Word document object.
+                text (str): The text to add to the paragraph.
+                bold (bool): Whether the text should be bold.
+                font_size (int): The font size of the text.
+            """
             paragraph = doc.add_paragraph()
             run = paragraph.add_run(text)
             run.bold = bold
@@ -76,6 +110,18 @@ class ReportGenerator:
         return file_paths
 
     def generate_report(self, criteria, value, output_dir='output', file_type='docx'):
+        """
+        Generates a report based on the given criteria and value, and saves it in the specified file type.
+
+        Args:
+            criteria (str): The criteria to filter attendance data ('ROOM_NO', 'COURSE_CODE', or 'STUDENT_BATCH').
+            value (str): The value for the specified criteria.
+            output_dir (str): The directory to save the generated report.
+            file_type (str): The type of file to generate ('docx' or 'pdf').
+
+        Returns:
+            str: The file path to the generated report.
+        """
         # Query the Attendance model based on the criteria
         if criteria == 'ROOM_NO':
             attendances = Attendance.objects.filter(ROOM_NO__ROOM_NO=value)
@@ -94,7 +140,15 @@ class ReportGenerator:
                    'Room No.', 'Attendance Status']
 
         def populate_data(data):
-            """ Helper function to map attendance data into rows. """
+            """ 
+            Helper function to map attendance data into rows. 
+
+            Args:
+                data (QuerySet): The attendance data to map.
+
+            Returns:
+                list: A list of lists containing the mapped attendance data.
+            """
             return [
                 [str(idx), attendance.STUDENT_ID.STUDENT_NAME,
                  attendance.EXAM_ID.COURSE_CODE.COURSE_CODE,

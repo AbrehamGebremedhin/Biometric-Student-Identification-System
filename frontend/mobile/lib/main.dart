@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'register_page.dart';
 import 'home.dart';
+import 'check_student_camera_page.dart'; // Import the CameraPage
 
 void main() {
   runApp(const MyApp());
@@ -17,7 +18,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Student Result Checker',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -73,7 +74,7 @@ class _SplashScreenState extends State<SplashScreen> {
     try {
       final response = await http
           .get(
-            Uri.parse('http://192.168.0.102:8000/api/v1/check/$uuid'),
+            Uri.parse('http://192.168.81.208:8000/api/v1/check/$uuid'),
           )
           .timeout(const Duration(seconds: 5));
 
@@ -118,8 +119,8 @@ class _SelectionPageState extends State<SelectionPage> {
     "LR303",
     "LR401",
     "LR402",
-    "LR601",
-    "Library"
+    "Library",
+    "LR601"
   ];
   List<String> sessions = ["Morning 09:00", "Midday 11:00", "Afternoon 02:00"];
 
@@ -193,6 +194,19 @@ class _SelectionPageState extends State<SelectionPage> {
                     }
                   : null,
               child: const Text('Proceed'),
+            ),
+            const SizedBox(height: 16), // Add some spacing
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        CameraPage(), // Navigate to CameraPage
+                  ),
+                );
+              },
+              child: const Text('Open Camera'),
             ),
           ],
         ),

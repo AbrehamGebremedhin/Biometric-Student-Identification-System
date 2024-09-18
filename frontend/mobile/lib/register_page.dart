@@ -46,7 +46,7 @@ class _RegisterPageState extends State<RegisterPage> {
       final response = await http
           .post(
         Uri.parse(
-            'http://192.168.0.102:8000/api/v1/examiners/'), // Use '10.0.2.2' for Android emulator, replace with actual IP for real device
+            'http://192.168.81.208:8000/api/v1/examiners/'), // Use '10.0.2.2' for Android emulator, replace with actual IP for real device
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
@@ -73,7 +73,7 @@ class _RegisterPageState extends State<RegisterPage> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
-      const url = 'http://192.168.0.102:8000/api/v1/examiners/';
+      const url = 'http://192.168.81.208:8000/api/v1/examiners/';
 
       if (await _checkUrlAccessibility(url)) {
         try {

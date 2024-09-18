@@ -52,7 +52,7 @@ class AttendanceList(APIView):
                 ROOM_NO__ROOM_NO__icontains=room_no)
 
         if not attendances.exists():
-            return Response({"Error": "Attendance not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(data={"Error": "Attendance not found"}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = AttendanceSerializer(attendances, many=True)
         return Response(serializer.data)
@@ -65,7 +65,7 @@ class AttendanceList(APIView):
         try:
             room = Room.objects.get(ROOM_NO=room_no, EXAM_TIME=exam_time)
         except Room.DoesNotExist:
-            return Response({"Error": f"Room number: {room_no} not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(data={"Error": f"Room number: {room_no} not found"}, status=status.HTTP_404_NOT_FOUND)
 
         # Flatten the list of student IDs
         student_ids = [
@@ -78,7 +78,7 @@ class AttendanceList(APIView):
             try:
                 student = Student.objects.get(STUDENT_ID=id)
             except Student.DoesNotExist:
-                return Response({"Error": f"Student with an ID: {id} not found"}, status=status.HTTP_404_NOT_FOUND)
+                return Response(data={"Error": f"Student with an ID: {id} not found"}, status=status.HTTP_404_NOT_FOUND)
 
             student_data = json.loads(StudentSerializer(
                 student).data["STUDENT_EXTRACTED_FEATURES"])
@@ -87,36 +87,46 @@ class AttendanceList(APIView):
             features = facial.compare_images(
                 stored_image_features_list=student_data, input_image_path=input_image.read())
 
+            data = {}
+
             if features:
+                data.update({"student_id": student.STUDENT_ID})
+                data.update({"student_name": student.STUDENT_NAME})
+                data.update({"student_batch": student.STUDENT_BATCH})
+
                 today = datetime.today().date()
 
                 # Save the attendance
                 try:
                     course = Course.objects.get(COURSE_CODE=course_code)
                 except Course.DoesNotExist:
-                    return Response({"Error": f"Course with code: {course_code} not found"}, status=status.HTTP_404_NOT_FOUND)
+                    return Response(data={"Error": f"Course with code: {course_code} not found"}, status=status.HTTP_404_NOT_FOUND)
 
                 try:
                     exam = Exam.objects.get(
                         COURSE_CODE=course, EXAM_DATE=today)
                 except Exam.DoesNotExist:
-                    return Response({"Error": f"Exam for {course} not found"}, status=status.HTTP_404_NOT_FOUND)
+                    return Response(data={"Error": f"Exam for {course} not found"}, status=status.HTTP_404_NOT_FOUND)
 
                 # Update the attendance record
                 attendance = Attendance.objects.filter(
                     STUDENT_ID=student, EXAM_ID=exam, ROOM_NO=room)
 
                 attendance.update(ATTENDANCE_STATUS=True)
-
-                return Response(f"success: {True}", status=status.HTTP_202_ACCEPTED)
+                data.update({"exam": exam.COURSE_CODE.COURSE_NAME})
+                data.update({"course_code": exam.COURSE_CODE.COURSE_CODE})
+                data.update({"exam_time": room.EXAM_TIME})
+                data.update({"room_no": room.ROOM_NO})
+                data.update({"success": True})
+                return Response(data=data, status=status.HTTP_202_ACCEPTED)
 
             if not features:
-                return Response(f"success: {False}", status=status.HTTP_404_NOT_FOUND)
+                data.update({"success": False})
+
+                return Response(data=data, status=status.HTTP_404_NOT_FOUND)
 
             if features == "No valid features extracted from the input image.":
-                return Response({"Error: No face detected in the image, please retake it again."}, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response({"Error": f"Student:{student} doesn't take examination in this room."}, status=status.HTTP_404_NOT_FOUND)
+                return Response(data={"Error: No face detected in the image, please retake it again."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class AttendanceDetail(APIView):
@@ -154,24 +164,24 @@ class NoImageAttendance(APIView):
         try:
             room = Room.objects.get(ROOM_NO=room_no, EXAM_TIME=exam_time)
         except Room.DoesNotExist:
-            return Response({"Error": "Room number: {room_no} not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(data={"Error": "Room number: {room_no} not found"}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             student = Student.objects.get(STUDENT_ID=student_id)
         except Student.DoesNotExist:
-            return Response({"Error": f"Student with an ID: {id} not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(data={"Error": f"Student with an ID: {id} not found"}, status=status.HTTP_404_NOT_FOUND)
 
         today = datetime.today().date()
         # Save the attendance
         try:
             course = Course.objects.get(COURSE_CODE=course_code)
         except Course.DoesNotExist:
-            return Response({"Error": f"Course with code: {course_code} not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(data={"Error": f"Course with code: {course_code} not found"}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             exam = Exam.objects.get(COURSE_CODE=course, EXAM_DATE=today)
         except Exam.DoesNotExist:
-            return Response({"Error": f"Exam for {course} not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(data={"Error": f"Exam for {course} not found"}, status=status.HTTP_404_NOT_FOUND)
 
         # Update the attendance record
         attendance = Attendance.objects.filter(
@@ -180,6 +190,37 @@ class NoImageAttendance(APIView):
         attendance.update(ATTENDANCE_STATUS=True)
 
         return Response(True, status=status.HTTP_202_ACCEPTED)
+
+
+class SearchStudentWithImage(APIView):
+    def get(self, request):
+        input_image = request.FILES.get("input_image")
+
+        print(input_image)
+
+        if not input_image:
+            return Response(data={"Error": "Image not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Filter students based on some criteria if possible
+        students = Student.objects.all()
+
+        for student in students:
+            student_data = json.loads(StudentSerializer(
+                student).data["STUDENT_EXTRACTED_FEATURES"])
+
+            is_student = facial.compare_images(
+                stored_image_features_list=student_data, input_image_path=input_image.read())
+
+            if is_student:
+                data = {
+                    'student_id': student.STUDENT_ID,
+                    'student_name': student.STUDENT_NAME,
+                    'student_batch': student.STUDENT_BATCH
+                }
+
+                return Response(data=data, status=status.HTTP_202_ACCEPTED)
+
+        return Response(data={"Error": "Student not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
 class GenerateAttendanceReport(APIView):

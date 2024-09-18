@@ -32,7 +32,7 @@ DEBUG = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.0.102']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.0.102', '192.168.81.208']
 
 
 # Application definition

@@ -4,7 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img; // Import the image package
-import 'home.dart';
+import 'result_page.dart';
 
 class CameraPage extends StatefulWidget {
   final String selectedRoom;
@@ -44,8 +44,6 @@ class _CameraPageState extends State<CameraPage> {
       if (compressedImage != null) {
         await _uploadImage(compressedImage);
       }
-    } else {
-      _gotoStudentPage();
     }
   }
 
@@ -79,7 +77,7 @@ class _CameraPageState extends State<CameraPage> {
     final request = http.MultipartRequest(
       'PATCH',
       Uri.parse(
-          'http://192.168.0.102:8000/api/v1/attendances/?room_no=${widget.selectedRoom}&exam_time=${widget.selectedSession}'),
+          'http://192.168.81.208:8000/api/v1/attendances/?room_no=${widget.selectedRoom}&exam_time=${widget.selectedSession}'),
     );
     request.files
         .add(await http.MultipartFile.fromPath('input_image', image.path));
@@ -90,68 +88,19 @@ class _CameraPageState extends State<CameraPage> {
       _isLoading = false;
     });
 
-    if (response.statusCode == 202) {
-      final responseBody = await response.stream.bytesToString();
-      final responseData = jsonDecode(responseBody);
+    final responseBody = await response.stream.bytesToString();
+    final responseData = jsonDecode(responseBody);
 
-      if (responseData['success']) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Attendance taken successfully')),
-        );
-
-        // Delay navigation to ensure the Snackbar is shown
-        await Future.delayed(const Duration(seconds: 2));
-
-        _gotoStudentPage();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Attendance not taken, please try again')),
-        );
-
-        // Delay navigation to ensure the Snackbar is shown
-        await Future.delayed(const Duration(seconds: 2));
-
-        _gotoStudentPage();
-      }
-    } else if (response.statusCode == 404) {
-      final responseBody = await response.stream.bytesToString();
-      final errorMessage = jsonDecode(responseBody)['Error'];
-      _showErrorDialog(errorMessage);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Image upload failed')),
-      );
-
-      // Delay navigation to ensure the Snackbar is shown
-      await Future.delayed(const Duration(seconds: 2));
-
-      _gotoStudentPage();
-    }
-  }
-
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Error'),
-          content: Text(message),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('OK'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ResultsPage(
+          statusCode: response.statusCode,
+          image: _image!,
+          responseData: responseData,
+        ),
+      ),
     );
-  }
-
-  void _gotoStudentPage() {
-    Navigator.of(context).pushReplacementNamed('/home');
   }
 
   @override

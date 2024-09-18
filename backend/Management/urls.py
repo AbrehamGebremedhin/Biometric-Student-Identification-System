@@ -1,15 +1,15 @@
 from django.urls import path
-from Management.views.students_views import StudentList, StudentDetail, CheckStudent
+from Management.views.students_views import StudentList, StudentDetail
 from Management.views.course_views import CourseList, CourseDetail
 from Management.views.exam_views import ExamList, ExamDetail
 from Management.views.room_views import RoomList, RoomDetail
-from Management.views.attendance_views import AttendanceList, AttendanceDetail, NoImageAttendance, GenerateAttendanceReport
+from Management.views.attendance_views import AttendanceList, AttendanceDetail, NoImageAttendance, GenerateAttendanceReport, SearchStudentWithImage
 from Management.views.mobile_views import ExaminerList, ExaminerDetail, ExaminerActiveCheck
 
 urlpatterns = [
-    path('students/', StudentList.as_view(), name='student-list'),
-    path('students/<str:id>/', StudentDetail.as_view(), name='student-detail'),
-    path('students/check/', CheckStudent.as_view(), name='check-student'),
+    path('students/', StudentList.as_view()),
+    path('students/<str:id>/', StudentDetail.as_view()),
+    path('searchStudent/', SearchStudentWithImage.as_view()),
     path('courses/', CourseList.as_view()),
     path('courses/<int:pk>/', CourseDetail.as_view()),
     path('exams/', ExamList.as_view()),

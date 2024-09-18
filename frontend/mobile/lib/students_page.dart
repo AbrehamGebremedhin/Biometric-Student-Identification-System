@@ -26,7 +26,7 @@ class _StudentsPageState extends State<StudentsPage> {
 
   Future<void> fetchStudents() async {
     final String apiUrl =
-        'http://192.168.0.102:8000/api/v1/attendances/?STUDENT_ID&COURSE_CODE&ROOM_NO=${widget.selectedRoom}&EXAM_TIME=${widget.selectedSession}';
+        'http://192.168.81.208:8000/api/v1/attendances/?STUDENT_ID&COURSE_CODE&ROOM_NO=${widget.selectedRoom}&EXAM_TIME=${widget.selectedSession}';
 
     try {
       final response = await http.get(Uri.parse(apiUrl));
@@ -51,7 +51,7 @@ class _StudentsPageState extends State<StudentsPage> {
 
   Future<void> markAttendance(String studentId, String courseCode) async {
     final String attendanceApiUrl =
-        'http://192.168.0.102:8000/api/v1/attendances/no-image/?room_no=${widget.selectedRoom}&exam_time=${widget.selectedSession}&student_id=$studentId&course_code=$courseCode';
+        'http://192.168.81.208:8000/api/v1/attendances/no-image/?room_no=${widget.selectedRoom}&exam_time=${widget.selectedSession}&student_id=$studentId&course_code=$courseCode';
 
     try {
       final response = await http.patch(Uri.parse(attendanceApiUrl));
