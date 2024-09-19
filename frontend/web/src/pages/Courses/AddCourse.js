@@ -4,16 +4,30 @@ import { useNavigate } from 'react-router-dom';
 import { errorHandler } from '../../utils/errorHandler';
 import { getCookieValue } from '../../utils/getCookieValue';
 
-
 const AddCourse = () => {
   const [courseCode, setCourseCode] = useState('');
   const [courseName, setCourseName] = useState('');
   const [term, setTerm] = useState('');
   const [error, setError] = useState(null);
+  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
+
+  const validateInputs = () => {
+    const newErrors = {};
+    if (!courseCode) newErrors.courseCode = 'Course code is required.';
+    if (!courseName) newErrors.courseName = 'Course name is required.';
+    if (!term) newErrors.term = 'Term is required.';
+    return newErrors;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const newErrors = validateInputs();
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     const newCourse = {
       COURSE_CODE: courseCode,
       COURSE_NAME: courseName,
@@ -29,9 +43,18 @@ const AddCourse = () => {
         },
         body: JSON.stringify(newCourse)
       });
-      await response.json();
+
+      if (!response.ok) {
+        const res = await response.json();
+        const backendErrors = {};
+        if (res.COURSE_CODE) backendErrors.courseCode = res.COURSE_CODE.join(' ');
+        if (res.COURSE_NAME) backendErrors.courseName = res.COURSE_NAME.join(' ');
+        if (res.TERM) backendErrors.term = res.TERM.join(' ');
+        setErrors(backendErrors);
+        return;
+      }
       navigate('/course');
-      setError(null); // Clear any previous errors
+      setErrors({}); // Clear any previous errors
     } catch (error) {
       const errorMessage = errorHandler(error, navigate);
       setError('Error sending message: ' + errorMessage);
@@ -55,8 +78,10 @@ const AddCourse = () => {
                 type="text"
                 id="courseCode"
                 value={courseCode}
+                required
                 onChange={(e) => setCourseCode(e.target.value)}
               />
+              {errors.courseCode && <p className="text-red-500 text-xs italic">{errors.courseCode}</p>}
             </div>
             <div className="mb-4">
               <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="courseName">
@@ -67,8 +92,10 @@ const AddCourse = () => {
                 type="text"
                 id="courseName"
                 value={courseName}
+                required
                 onChange={(e) => setCourseName(e.target.value)}
               />
+              {errors.courseName && <p className="text-red-500 text-xs italic">{errors.courseName}</p>}
             </div>
             <div className="mb-4">
               <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="term">
@@ -79,13 +106,15 @@ const AddCourse = () => {
                 type="text"
                 id="term"
                 value={term}
+                required
                 onChange={(e) => setTerm(e.target.value)}
               />
+              {errors.term && <p className="text-red-500 text-xs italic">{errors.term}</p>}
             </div>
             <div className="flex items-center justify-between">
               <button
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                 type="submit"
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
               >
                 Add Course
               </button>

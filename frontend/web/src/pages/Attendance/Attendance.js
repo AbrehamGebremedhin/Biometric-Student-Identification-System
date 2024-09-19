@@ -24,6 +24,8 @@ const AttendanceTable = () => {
   const [criteria, setCriteria] = useState("");
   const [value, setValue] = useState("");
   const [fileType, setFileType] = useState("");
+  const [term, setTerm] = useState("");
+  const [examType, setExamType] = useState("");
 
   useEffect(() => {
     // Fetch examinerMobiles from the server
@@ -35,7 +37,6 @@ const AttendanceTable = () => {
           }
         });
         setAttendanceData(response.data);
-        console.log(response.data);
         setFilteredData(response.data);
       } catch (error) {
         const errorMessage = errorHandler(error, navigate);
@@ -64,7 +65,9 @@ const AttendanceTable = () => {
         params: {
           "criteria": criteria,
           "value": value,
-          "file_type": fileType
+          "file_type": fileType,
+          "term": term,
+          "exam_type": examType
         },
         headers:{
           'Authorization': `Bearer ${getCookieValue("token")}`
@@ -92,7 +95,6 @@ const AttendanceTable = () => {
         <div className='flex-1 p-6 ml-64'>
             <div className="container mx-auto p-4">
                 <h1 className="text-2xl font-bold mb-4">Attendance Table</h1>
-                
                 {/* Filter Inputs */}
                 <div className="mb-4">
                     <input 
@@ -191,6 +193,29 @@ const AttendanceTable = () => {
                             onChange={(e) => setValue(e.target.value)} 
                             className="p-2 border border-gray-300 w-full"
                             />
+                        </div>
+
+                        <div className="mb-2">
+                            <label className="block mb-1">For which term</label>
+                            <input 
+                            type="text" 
+                            value={term} 
+                            onChange={(e) => setTerm(e.target.value)} 
+                            className="p-2 border border-gray-300 w-full"
+                            />
+                        </div>
+
+                        <div className="mb-2">
+                          <label className="block mb-1">Exam Type</label>
+                          <select 
+                              value={examType} 
+                              onChange={(e) => setExamType(e.target.value)} 
+                              className="p-2 border border-gray-300 w-full"
+                          >
+                              <option value="">Select Exam Type</option>
+                              <option value="MIDTERM">Midterm</option>
+                              <option value="FINAL">Final</option>
+                          </select>
                         </div>
 
                         <div className="mb-2">

@@ -109,7 +109,7 @@ class ReportGenerator:
 
         return file_paths
 
-    def generate_report(self, criteria, value, output_dir='output', file_type='docx'):
+    def generate_report(self, criteria, value, term, exam_type, output_dir='output', file_type='docx'):
         """
         Generates a report based on the given criteria and value, and saves it in the specified file type.
 
@@ -122,15 +122,29 @@ class ReportGenerator:
         Returns:
             str: The file path to the generated report.
         """
+
         # Query the Attendance model based on the criteria
         if criteria == 'ROOM_NO':
-            attendances = Attendance.objects.filter(ROOM_NO__ROOM_NO=value)
+            attendances = Attendance.objects.filter(
+                ROOM_NO__ROOM_NO__iexact=value)
+            attendances = attendances.filter(
+                EXAM_ID__COURSE_CODE__TERM__iexact=term)
+            attendances = attendances.filter(
+                EXAM_ID__EXAM_TYPE__iexact=exam_type)
         elif criteria == 'COURSE_CODE':
             attendances = Attendance.objects.filter(
-                EXAM_ID__COURSE_CODE__COURSE_CODE=value)
+                EXAM_ID__COURSE_CODE__COURSE_CODE__iexact=value)
+            attendances = attendances.filter(
+                EXAM_ID__COURSE_CODE__TERM__iexact=term)
+            attendances = attendances.filter(
+                EXAM_ID__EXAM_TYPE__iexact=exam_type)
         elif criteria == 'STUDENT_BATCH':
             attendances = Attendance.objects.filter(
-                STUDENT_ID__STUDENT_BATCH=value)
+                STUDENT_ID__STUDENT_BATCH__iexact=value)
+            attendances = attendances.filter(
+                EXAM_ID__COURSE_CODE__TERM__iexact=term)
+            attendances = attendances.filter(
+                EXAM_ID__EXAM_TYPE__iexact=exam_type)
         else:
             raise ValueError(
                 "Invalid criteria. Choose from 'ROOM_NO', 'COURSE_CODE', or 'STUDENT_BATCH'.")

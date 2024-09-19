@@ -9,6 +9,7 @@ const Student = () => {
     const [students, setStudents] = useState([]);
     const [nameFilter, setNameFilter] = useState('');
     const [batchFilter, setBatchFilter] = useState('');
+    const [idFilter, setIdFilter] = useState('');
     const [errorMessage, setErrorMessage] = useState("");
     const navigate = useNavigate();
 
@@ -44,7 +45,6 @@ const Student = () => {
                 setStudents(response.data);
               } catch (error) {
                 const errorMsg = errorHandler(error, navigate);
-                console.error('Error fetching students:', errorMsg);
                 setErrorMessage(errorMsg);
               }
         };
@@ -53,7 +53,8 @@ const Student = () => {
 
     const filteredStudents = students.filter(student => 
         student.STUDENT_NAME?.toLowerCase().includes(nameFilter.toLowerCase()) &&
-        student.STUDENT_BATCH?.toLowerCase().includes(batchFilter.toLowerCase())
+        student.STUDENT_BATCH?.toLowerCase().includes(batchFilter.toLowerCase()) &&
+        student.STUDENT_ID?.toLowerCase().includes(idFilter.toLowerCase())
     );
 
     return (
@@ -83,10 +84,21 @@ const Student = () => {
                                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             />
                         </div>
+                        <div>
+                            <label htmlFor="batchFilter" className="block text-sm font-medium text-gray-700">Filter by ID:</label>
+                            <input 
+                                type="text" 
+                                id="batchFilter" 
+                                value={idFilter} 
+                                onChange={(e) => setIdFilter(e.target.value)} 
+                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            />
+                        </div>
                     </div>
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student ID</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -95,6 +107,7 @@ const Student = () => {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {filteredStudents.map(student => (
                                 <tr key={student.STUDENT_ID}>
+                                    <td className="px-6 py-4 whitespace-nowrap">{student.STUDENT_ID}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">{student.STUDENT_NAME}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">{student.STUDENT_BATCH}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">

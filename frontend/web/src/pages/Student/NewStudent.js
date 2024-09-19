@@ -79,6 +79,7 @@ const NewStudent = () => {
                             name="STUDENT_ID"
                             value={formData.STUDENT_ID}
                             onChange={handleChange}
+                            required
                             className="border p-2 rounded"
                         />
                     </div>
@@ -89,6 +90,7 @@ const NewStudent = () => {
                             name="firstName"
                             value={formData.firstName}
                             onChange={handleChange}
+                            required
                             className="border p-2 rounded"
                         />
                     </div>
@@ -99,6 +101,7 @@ const NewStudent = () => {
                             name="fatherName"
                             value={formData.fatherName}
                             onChange={handleChange}
+                            required
                             className="border p-2 rounded"
                         />
                     </div>
@@ -109,6 +112,7 @@ const NewStudent = () => {
                             name="grandfatherName"
                             value={formData.grandfatherName}
                             onChange={handleChange}
+                            required
                             className="border p-2 rounded"
                         />
                     </div>
@@ -119,6 +123,7 @@ const NewStudent = () => {
                             name="STUDENT_BATCH"
                             value={formData.STUDENT_BATCH}
                             onChange={handleChange}
+                            required
                             className="border p-2 rounded"
                         />
                     </div>
@@ -128,6 +133,7 @@ const NewStudent = () => {
                             type="file"
                             name="left_image"
                             onChange={handleChange}
+                            required
                             className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
@@ -137,6 +143,7 @@ const NewStudent = () => {
                             type="file"
                             name="right_image"
                             onChange={handleChange}
+                            required
                             className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
@@ -146,6 +153,7 @@ const NewStudent = () => {
                             type="file"
                             name="front_image"
                             onChange={handleChange}
+                            required
                             className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>

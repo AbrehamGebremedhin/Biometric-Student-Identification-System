@@ -231,10 +231,12 @@ class GenerateAttendanceReport(APIView):
         criteria = request.query_params.get("criteria")
         value = request.query_params.get("value")
         file_type = request.query_params.get("file_type")
+        term = request.query_params.get("term")
+        exam_type = request.query_params.get("exam_type")
 
         report = ReportGenerator()
         file_path = report.generate_report(
-            criteria, value, file_type=file_type)
+            criteria, value, term, exam_type, file_type=file_type)
 
         # Return the file as a downloadable response
         response = FileResponse(open(file_path, 'rb'), as_attachment=True)

@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { errorHandler } from '../../utils/errorHandler';
 import { getCookieValue } from '../../utils/getCookieValue';
 import Sidebar from '../../components/SideBar';
 
-const EditCourse = ({ courseId }) => {
+const EditCourse = () => {
   const [course, setCourse] = useState({});
   const navigate = useNavigate();
-
-
+  const [errorMessage, setErrorMessage] = useState("");
+  const { courseId } = useParams();
 
   useEffect(() => {
     axios.get(`http://127.0.0.1:8000/api/v1/courses/${courseId}/`, {
@@ -22,7 +22,7 @@ const EditCourse = ({ courseId }) => {
     })
     .catch(error => {
       const errorMessage = errorHandler(error, navigate);
-      console.error('There was an error fetching the course data!', errorMessage);
+      setErrorMessage(errorMessage);
     });
   }, [courseId, navigate]);
 
@@ -48,7 +48,7 @@ const EditCourse = ({ courseId }) => {
     })
     .catch(error => {
       const errorMessage = errorHandler(error, navigate);
-      console.error('There was an error updating the course!', errorMessage);
+      setErrorMessage(errorMessage);
     });
   };
 
@@ -81,18 +81,15 @@ const EditCourse = ({ courseId }) => {
             </div>
             <div className="flex flex-col">
               <label className="mb-2 font-semibold">Term:</label>
-              <select
-                name="TERM"
-                value={course.TERM}
-                onChange={handleChange}
-                className="p-2 border border-gray-300 rounded"
-              >
-                <option value="SPRING">Spring</option>
-                <option value="SUMMER">Summer</option>
-                <option value="FALL">Fall</option>
-                <option value="WINTER">Winter</option>
-              </select>
+                <input
+                  type="text"
+                  name="TERM"
+                  value={course.TERM}
+                  onChange={handleChange}
+                  className="p-2 border border-gray-300 rounded"
+                />
             </div>
+            {errorMessage && <p className="text-red-500">{errorMessage}</p>}
             <button type="submit" className="p-2 bg-blue-500 text-white rounded">Update Course</button>
           </form>
         </div>

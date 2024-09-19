@@ -71,6 +71,7 @@ const AddRoom = () => {
                 type="file"
                 accept=".csv, .xlsx, .xls"
                 onChange={handleFileChange}
+                required
                 className="w-full px-3 py-2 border rounded"
               />
               <label htmlFor="examTime" className="block text-gray-700 mb-2 mt-4">Exam Time:</label>
@@ -79,6 +80,7 @@ const AddRoom = () => {
                 name="examTime" 
                 className="w-full px-3 py-2 border rounded"
                 onChange={handleExamTimeChange}
+                required
               >
                 <option value="">Select Exam Time</option>
                 <option value="MORNING">Morning (9:00 AM)</option>

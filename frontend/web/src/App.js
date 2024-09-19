@@ -40,7 +40,7 @@ function App() {
             <Route path='/edit-course/:courseId' element={<EditCourse/>}/>
             <Route path='/student' element={<Student/>}/>
             <Route path='/add-student' element={<NewStudent/>}/>
-            <Route path='/edit-student/:id' element={<EditStudent/>}/>
+            <Route path='/edit-student/:studentId' element={<EditStudent/>}/>
             <Route path='/exam' element={<Exam/>}/>
             <Route path='/add-exam' element={<AddExam/>}/>
             <Route path='/edit-exam/:examId' element={<UpdateExam/>}/>

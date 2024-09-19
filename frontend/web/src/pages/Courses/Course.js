@@ -45,7 +45,6 @@ const Course = () => {
                 setCourses(response.data);
               } catch (error) {
                 const errorMsg = errorHandler(error, navigate);
-                console.error('Error fetching courses:', errorMsg);
                 setErrorMessage(errorMsg);
               }
         };

@@ -24,7 +24,7 @@ const AddExam = () => {
       EXAM_DURATION: examDuration,
       EXAM_TYPE: examType
     }
-    console.log(examData);
+    
     try {
       const response = await fetch("http://127.0.0.1:8000/api/v1/exams/", {
         method: "POST",
